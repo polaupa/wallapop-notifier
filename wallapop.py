@@ -3,6 +3,7 @@ import time
 from datetime import datetime
 import os
 from dotenv import load_dotenv
+from telegram_utils import send_telegram, get_chat_id
 
 load_dotenv()
 
@@ -12,9 +13,7 @@ REFRESH_TIME = int(os.getenv("REFRESH_TIME", 300))
 MIN_PRICE = int(os.getenv("MIN_PRICE", 0))
 MAX_PRICE = int(os.getenv("MAX_PRICE", 999999))
 
-# Telegram Data
-TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
-TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
+
 
 def search_wallapop():
     url = "https://api.wallapop.com/api/v3/search?source=search_box&keywords=" + ITEM + "&longitude=2.1699187&latitude=41.387917&order_by=newest&min_sale_price=" + str(MIN_PRICE) + "&max_sale_price=" + str(MAX_PRICE)
@@ -70,18 +69,9 @@ def search_wallapop():
     
     return new_items
 
-def send_telegram(message):
-    token = TELEGRAM_TOKEN
-    chat_id = TELEGRAM_CHAT_ID
-    url = f"https://api.telegram.org/bot{token}/sendMessage"
-    data = {
-        "chat_id": chat_id,
-        "text": message,
-        "parse_mode": "HTML"
-    }
-    requests.post(url, data=data)
-
 if __name__ == "__main__":
+
+    TELEGRAM_CHAT_ID = get_chat_id()
 
     while True:
         new_items = search_wallapop()
@@ -96,6 +86,6 @@ if __name__ == "__main__":
                     f"<b>Descripción:</b> {item[1]}\n"
                     f"<b>URL:</b> <a href='{item[4]}'>{item[4]}</a>\n\n"
                 )
-                send_telegram(message)
+                send_telegram(message, TELEGRAM_CHAT_ID)
             print("Telegram message sent.")
         time.sleep(REFRESH_TIME)
