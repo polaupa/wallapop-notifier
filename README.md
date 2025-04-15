@@ -23,6 +23,9 @@ MIN_PRICE=10 # En Euro
 MAX_PRICE=30 # En Euro
 ITEM=Mando Nintendo Switch # Nombre de tu búsqueda
 REFRESH_TIME=120 # Tiempo entre notificaciones (en segundos)
+LONGITUDE=2.1699187 #Por defecto sale Barcelona
+LATITUDE=41.38791
+DISTANCE=30 # Radio de la búsqueda en km
 ```
 
 Para crear tu bot de Telegram y obtener el token puedes mirar la [documentación de Telegram oficial](https://core.telegram.org/bots/tutorial)
