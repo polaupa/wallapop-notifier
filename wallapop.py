@@ -11,12 +11,14 @@ load_dotenv()
 ITEM = os.getenv("ITEM")
 REFRESH_TIME = int(os.getenv("REFRESH_TIME", 300))
 MIN_PRICE = int(os.getenv("MIN_PRICE", 0))
-MAX_PRICE = int(os.getenv("MAX_PRICE", 999999))
-
-
+MAX_PRICE = int(os.getenv("MAX_PRICE", 1000))
+LONGITUDE = os.getenv("LONGITUDE",2.1699187) # Barcelona by default
+LATITUDE = os.getenv("LATITUDE",41.387917)
+DISTANCE = int(os.getenv("DISTANCE", 30))
 
 def search_wallapop():
-    url = "https://api.wallapop.com/api/v3/search?source=search_box&keywords=" + ITEM + "&longitude=2.1699187&latitude=41.387917&order_by=newest&min_sale_price=" + str(MIN_PRICE) + "&max_sale_price=" + str(MAX_PRICE)
+    url = "https://api.wallapop.com/api/v3/search?source=search_box&keywords=" + ITEM + "&longitude=" + LONGITUDE + "&latitude=" + LATITUDE + "&order_by=newest&min_sale_price=" + str(MIN_PRICE) + "&max_sale_price=" + str(MAX_PRICE) + "&distance_in_km=" + str(DISTANCE)
+    print(url)
     # url = "https://api.wallapop.com/api/v3/search?source=search_box&keywords=" + ITEM + "&longitude=-3.69196&latitude=40.41956"
 
 
@@ -54,12 +56,13 @@ def search_wallapop():
         price = item["price"]["amount"]
         timestamp = item["modified_at"]
         item_url = "https://es.wallapop.com/item/" + item["web_slug"]
+        location = item["location"]["postal_code"] + " " + item["location"]["city"] + " " + item["location"]["region2"]
         date = datetime.fromtimestamp(timestamp / 1000)
         difference = current_date - date
 
         # If item is newer than 2 minutes, print it
         if difference.seconds < REFRESH_TIME:
-            new_items.append([title, description, price, date, item_url])
+            new_items.append({'title':title, 'description':description, 'price':price, 'date':date, 'item_url':item_url, 'location':location})
             # print("Item URL: " + item_url)
             # print("Title: " + title)
             # print("Price: " + str(price) + "€")
@@ -80,12 +83,14 @@ if __name__ == "__main__":
         if new_items:
             for item in new_items:
                 message = (
-                    f"<b>{item[0]}</b>\n"
-                    f"<b>Precio:</b> {item[2]}€\n"
+                    f"<b>{item['title']}</b>\n"
+                    f"<b>Precio:</b> {item['price']}€\n"
                     # f"<b>Última Modificación:</b> {item[3]}\n"
-                    f"<b>Descripción:</b> {item[1]}\n"
-                    f"<b>URL:</b> <a href='{item[4]}'>{item[4]}</a>\n\n"
+                    f"<b>Descripción:</b> {item['description']}\n"
+                    f"<b>Ubicación:</b> {item['location']}\n"
+                    f"<b>URL:</b> <a href='{item['item_url']}'>{item['item_url']}</a>\n\n"
                 )
+
                 send_telegram(message, TELEGRAM_CHAT_ID)
             print("Telegram message sent.")
         time.sleep(REFRESH_TIME)
