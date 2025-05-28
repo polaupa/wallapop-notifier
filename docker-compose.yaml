@@ -1,0 +1,6 @@
+services:
+  wallapop:
+    build:
+      context: https://github.com/polaupa/wallapop-scrap.git
+    env_file:
+      - .env
