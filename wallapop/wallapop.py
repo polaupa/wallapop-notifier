@@ -31,7 +31,6 @@ def getHeaders():
 
 
 def search_wallapop(params, REFRESH_TIME=120):
-    logger.info(f"Searching for {params['ITEM']} at {url}")
 
     query_dict = {
         "source": "search_box",
@@ -48,6 +47,8 @@ def search_wallapop(params, REFRESH_TIME=120):
     base_url = "https://api.wallapop.com/api/v3/search"
     query_string = urlencode(query_dict)
     url = f"{base_url}?{query_string}"
+    logger.info(f"Searching for {params['ITEM']} at {url}")
+
     # logger.info(f'API Endpoint: {url}')
     
     headers = getHeaders()
@@ -78,7 +79,12 @@ def search_wallapop(params, REFRESH_TIME=120):
     return new_items
 
 def getUserReviews(user_id):
+    #reviews
     url = f"https://api.wallapop.com/api/v3/users/{user_id}/stats?init=0"
+    #stats
+    # url = "https://api.wallapop.com/api/v3/users/{user_id}/"
+    #extra-info
+    # url = "https://api.wallapop.com/api/v3/users/{user_id}/extra-info"
 
     headers = getHeaders()
     response = requests.get(url, headers=headers)

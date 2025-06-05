@@ -1,6 +1,9 @@
 services:
   wallapop:
+    name: wallapop-notifier
     build:
-      context: https://github.com/polaupa/wallapop-scrap.git
+      # context: https://github.com/polaupa/wallapop-notifier.git
+      context: .
+      dockerfile: Dockerfile
     env_file:
       - .env

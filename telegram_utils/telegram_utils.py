@@ -1,11 +1,12 @@
 import requests
+import logging
 import time
 from datetime import datetime
 import os
 from dotenv import load_dotenv
 
 load_dotenv()
-
+logger = logging.getLogger("wallapop")
 # Telegram Data
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 # TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
@@ -28,7 +29,8 @@ def get_updates(offset=None):
     return resp.json()
 
 def get_chat_id():
-    print("Por favor, envía /start al bot en Telegram.")
+
+    logger.info("Por favor, envía /start al bot en Telegram.")
     updates = get_updates()
     if updates.get("result"):
         last_update_id = updates["result"][-1]["update_id"] + 1
@@ -43,6 +45,6 @@ def get_chat_id():
             text = message.get("text", "")
             if text == "/start":
                 chat_id = message["chat"]["id"]
-                print(f"¡Chat ID detectado! Tu chat_id es: {chat_id}")
+                logger.info(f"¡Chat ID detectado! Tu chat_id es: {chat_id}")
                 return chat_id
         time.sleep(1)
