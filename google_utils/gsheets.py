@@ -10,7 +10,6 @@ from google.oauth2.credentials import Credentials
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
 
 # The ID and range of a sample spreadsheet.
-SPREADSHEET_ID = "1XDb0I4JTaUx66iK_ptiib0OxFochIGq2XP5xNSLLSu4"
 RANGE_NAME = "A1:G20"
 
 
@@ -37,7 +36,7 @@ def googleLogin():
     
     return creds
 
-def readSpreadsheet(creds):
+def readSpreadsheet(creds,SPREADSHEET_ID):
     
     service = build('sheets', 'v4', credentials=creds)
     sheet = service.spreadsheets()
