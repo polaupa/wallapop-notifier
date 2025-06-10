@@ -50,17 +50,17 @@ def get_chat_id():
 
 def html_parse(product):
 
-    if not product.max_price:
-        product.max_price = "No disponible"
+    if product.max_price == None:
+        product.max_price = "???"
         product.score = "No disponible"
         product.analysis = "No disponible"
     message = (
         f"<b>{product.title}</b>\n"
-        f"<b>Precio recomendado por la IA:</b> {product.max_price}€\n"
+        f"<b>Precio recomendado por la IA:</b> {product.max_price} €\n"
         f"<b>Precio de Wallapop:</b> {product.price}€\n"
         f"<b>Ubicación:</b> {product.location}\n"
         f"<b>Fecha de modificación:</b> {product.date.strftime('%Y-%m-%d %H:%M:%S')}\n"
-        f"<b>Valoración del vendedor:</b> {product.user_rating}\n"
+        f"<b>Valoración del vendedor:</b> {product.user_reviews}\n"
         f"<b>Análisis:</b> {product.analysis}\n"
         f"<b>Puntuación de compra:</b> {product.score}\n"
         f"<b>Link del producto:</b> <a href='{product.item_url}'>{product.item_url}</a>\n"

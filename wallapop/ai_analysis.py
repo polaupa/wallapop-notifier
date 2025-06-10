@@ -1,6 +1,7 @@
 import json
 from pydantic import BaseModel, ValidationError
 from datetime import datetime, time
+from typing import Optional
 from openai import OpenAI
 import logging
 import os
@@ -50,14 +51,14 @@ class Products(BaseModel):
 class CombinedProduct(BaseModel):
     title: str
     price: float
-    max_price: float 
-    analysis: str
+    max_price: Optional[float] = None 
+    analysis: Optional[str] = None
     description: str
     location: str
     date: datetime
     user_id: str
-    user_rating: int 
-    score: int
+    user_reviews: int 
+    score: Optional[int] = None
     item_url: str
 
 class BaseProduct(BaseModel):
@@ -74,7 +75,9 @@ def analyze_products(products_data):
     if MODEL == None:
         logger.warning("No AI model selected.")
         products = [
-            BaseProduct(**item) if not isinstance(item, BaseProduct) else item
+            CombinedProduct(
+                **{**item, 'user_reviews': getUserReviews(item['user_id'])}
+            ) if not isinstance(item, CombinedProduct) else item
             for item in products_data
         ]
         return products
@@ -206,7 +209,7 @@ def combine_products_with_info(products, additional_info):
         info = add_info_dict.get(item_url)
         if info:
             # Unimos los campos, priorizando los del product si hay conflicto
-            combined_data = {**info, **product, 'user_rating': getUserReviews(product['user_id'])}
+            combined_data = {**info, **product, 'user_reviews': getUserReviews(product['user_id'])}
             combined_product = CombinedProduct(**combined_data)
             combined_products.append(combined_product)
     return combined_products
@@ -228,7 +231,7 @@ def parse_response(response):
     #     print(f"Location: {product.get('location', 'No location provided')}")
     #     print(f"Date: {product.get('date', 'No date provided')}")
     #     print(f"User ID: {product.get('user_id', 'No user ID provided')}")
-    #     print(f"User Rating: {product.get('user_rating', 'No user rating provided')}")
+    #     print(f"User Rating: {product.get('user_reviews', 'No user rating provided')}")
     #     print(f"Análisis: {product['analysis']}")
     #     print(f"Score: {product['score']}\n")
     #     print(f"Item URL: {product['item_url']}")

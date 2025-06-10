@@ -14,6 +14,7 @@ from wallapop.ai_analysis import analyze_products
 
 REFRESH_TIME = 600
 ENV_PATH = '.env'
+MIN_SCORE = 75
 
 stream_formatter = colorlog.ColoredFormatter(
     fmt=("%(cyan)s%(asctime)s%(reset)s %(log_color)s%(levelname)-8s%(reset)s %(message)s"),
@@ -31,7 +32,7 @@ stream_handler.setFormatter(stream_formatter)
 logging.root.addHandler(stream_handler)
 
 logger = logging.getLogger("wallapop")
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 
 
@@ -58,34 +59,21 @@ def main():
                 if new_items:
                     products = analyze_products(new_items)
                     for product in products:
-                        html_product = html_parse(product)
-                        send_telegram(html_product, TELEGRAM_CHAT_ID)
-                    # if products == -1:
-                    #     for product in new_items:
-                    #         html_products = html_parse(product)
-                    #         print(f"Título: {product["title"]}")
-                    #         print(f"Precio de Wallapop: {product["price"]} €")
-                    #         print(f"Ubicación: {product["location"]}")
-                    #         print(f"Fecha de modificación: {product['date']}")
-                    #         print(f"Valoración del vendedor: {getUserReviews(product['user_id'])}")
-                    #         print(f"Link del producto: {product["item_url"]}\n")
-                    # else:
-                    #     for product in products:
-                    #         html_products = html_parse(product)
-                    #         print(f"Título: {product.title}")
-                    #         print(f"Precio recomendado por la IA: {product.max_price} €")
-                    #         print(f"Precio de Wallapop: {product.price} €")
-                    #         print(f"Ubicación: {product.location}")
-                    #         print(f"Fecha de modificación: {product.date.strftime('%Y-%m-%d %H:%M:%S')}")
-                    #         print(f"Valoración del vendedor: {product.user_rating}")
-                    #         print(f"Análisis: {product.analysis}")
-                    #         print(f"Puntuación de compra: {product.score}")
-                    #         print(f"Link del producto: {product.item_url}\n")
-                    #     logger.info(f"New Item: {product.title}")
-                    #     send_telegram(message, TELEGRAM_CHAT_ID)
-                    logger.info(f"Telegram message sent. Sleeping {round(REFRESH_TIME/60,2)} minutes until next check.")
+                        if product.score == None and product.user_reviews > 0:
+                            html_product = html_parse(product)
+                            send_telegram(html_product, TELEGRAM_CHAT_ID)
+                        elif product.user_reviews == 0:
+                            logger.info(f"Item: {product.title} has no user reviews. Skipping.")
+                        elif product.score > MIN_SCORE and product.user_reviews > 0:
+                            html_product = html_parse(product)
+                            send_telegram(html_product, TELEGRAM_CHAT_ID)
+                            logger.info(f"Item: {product.title} is interesting (score: {product.score}). Telegram message sent.")
+                        else:
+                            logger.debug(f"Item: {product.title} is not interesting enough (score: {product.score}). Skipping.")
+                            logger.debug(product.analysis)
                 else:
-                    logger.info(f"No new items found for {params['ITEM']}. Sleeping {round(REFRESH_TIME/60,2)} minutes until next check.")
+                    logger.info(f"No new items found for {params['ITEM']}.")
+            logger.info(f"Sleeping {round(REFRESH_TIME/60,2)} minutes until next check.")
             time.sleep(REFRESH_TIME)
     except KeyboardInterrupt:
         logger.warning("KeyboardInterrupt detected. Exiting...")
