@@ -15,23 +15,27 @@ from wallapop.wallapop import getUserReviews
 logger = logging.getLogger("wallapop")
 
 load_dotenv()
-API_KEY = os.getenv("AI_MODEL_API_KEY")
-MODEL = 'deepseek-chat'
 
-if MODEL == "deepseek-chat":
-    base_url = "https://api.deepseek.com"
-elif MODEL == "sonar" or MODEL == "r1-1776" or MODEL == "sonar-pro":
-    base_url = "https://api.perplexity.ai"
-else:
-    logger.error(f"Model {MODEL} not supported. Using deepseek-chat model.")
-    MODEL = 'deepseek-chat'
-    base_url = "https://api.deepseek.com"
+MODEL = os.getenv("AI_MODEL")
 
-
-client = OpenAI(
-    api_key=API_KEY,
-    base_url=base_url
-)
+if MODEL:
+    API_KEY = os.getenv("AI_MODEL_API_KEY")
+    if MODEL == "deepseek-chat":
+        base_url = "https://api.deepseek.com"
+    elif MODEL == "sonar" or MODEL == "r1-1776" or MODEL == "sonar-pro":
+        base_url = "https://api.perplexity.ai"
+    else:
+        logger.error(f"Model {MODEL} not supported. Not using AI.")
+        MODEL = None
+    try:
+        client = OpenAI(
+            api_key=API_KEY,
+            base_url=base_url
+        )
+    except Exception as e:
+        logger.error(f"Error initializing OpenAI client: {e}")
+        MODEL = None
+    
 
 class Product(BaseModel):
     title: str
@@ -49,21 +53,26 @@ class CombinedProduct(BaseModel):
     location: str
     date: datetime
     user_id: str
-    user_rating: str 
+    user_rating: int 
     score: int
-    item_url: int
+    item_url: str
 
 class Products(BaseModel):
     products: list[Product]
 
 def analyze_products(products_data):
+    if MODEL == None:
+        logger.warning("No AI model selected.")
+        return -1
+    logger.info(f"Analyzing with {MODEL} ...")
     system_content =  [
         {"type": "text", "text": "Eres un analista de productos de segunda mano. Recibirás datos de uno o varios producto de Wallapop, y tienes que decidir si es una ganga o no. Se muy estricto. La fecha que aparece, es correcta, ahora estamos en tu futuro."},
         {"type": "text", "text": "Responde con un JSON para todos, sin dejarte ninguno de los productos que te he pasado. Debe tener exactamente el siguiente formato:"},
         {"type": "text", "text": json.dumps(Products.model_json_schema())},
         {"type": "text", "text": "En análisis, tienes que argumentar por qué es una buena o mala compra, diciendo los pros y contras (si tiene). Ten en cuenta el precio comparado con la antigüedad y estado, la descripción y características, y precio de mercado de segunda mano. Son vendedores legítimos, no tengas en cuenta cosas de estafa, es todo fiable."}, 
+        {"type": "text", "text": "En análisis, también dame un pequeño resumen del producto, basado en el título y la descripción."}, 
         {"type": "text", "text": "En score, puntúa sobre 100, teniendo en cuenta tu análisis, si lo debería comprar o no. Puedes basarte en: (0-30): Mala compra (precio > mercado), (31-70): Oportunidad regular, (71-100): Gangazo"},
-        {"type": "text", "text": "En max_price, pon el precio que le des al menos un 85 de score."}, 
+        {"type": "text", "text": "En max_price, pon el precio que creas que debería tener, para que tu lo puntuaras con un 85 de score."}, 
         {"type": "text", "text": "El item_url, tiene que ser exactamente el mismo que te he pasado, no lo modifiques."}, 
     ]
 
@@ -100,9 +109,9 @@ def analyze_products(products_data):
     cost = getTotalPrice(response.usage)
 
     if cost != -1:
-        logger.info(f"Cost: ${cost}")
+        logger.info(f"Price of this call: ${cost}")
 
-    return parsed_response
+    return full_response
 
         
 def happyHour():
@@ -167,7 +176,8 @@ def getTotalPrice(usage):
         else:
             logger.warning(f"Pricing for {key} not found.")
             return -1
-    return total_price
+    
+    return round(total_price, 6)
 
 
 
@@ -196,19 +206,28 @@ def parse_response(response):
         logger.error(f"LLM Response validation error: {e}")
     
     ## Aqué està posant un missatge que no està ben estructurat, de vegades falla i altres no.
-    for product in output['products']:
-        print(f"Product: {product['title']}")
-        print(f"Max Price: {product['max_price']}")
-        print(f"Description: {product.get('description', 'No description provided')}")
-        print(f"Location: {product.get('location', 'No location provided')}")
-        print(f"Date: {product.get('date', 'No date provided')}")
-        print(f"User ID: {product.get('user_id', 'No user ID provided')}")
-        print(f"User Rating: {product.get('user_rating', 'No user rating provided')}")
-        print(f"Análisis: {product['analysis']}")
-        print(f"Score: {product['score']}\n")
-        print(f"Item URL: {product['item_url']}")
+    # for product in output['products']:
+    #     print(f"Product: {product['title']}")
+    #     print(f"Max Price: {product['max_price']}")
+    #     print(f"Description: {product.get('description', 'No description provided')}")
+    #     print(f"Location: {product.get('location', 'No location provided')}")
+    #     print(f"Date: {product.get('date', 'No date provided')}")
+    #     print(f"User ID: {product.get('user_id', 'No user ID provided')}")
+    #     print(f"User Rating: {product.get('user_rating', 'No user rating provided')}")
+    #     print(f"Análisis: {product['analysis']}")
+    #     print(f"Score: {product['score']}\n")
+    #     print(f"Item URL: {product['item_url']}")
     # output = json.loads(response.choices[0].message.content)
     parsed_response = output['products']
     return parsed_response
 
-# print(analyze_products(mockdata))
+
+if __name__ == "__main__":
+    from wallapop import getUserReviews
+    from mockdata import mockdata_multiple, mockdata_simple, mockdata_double
+    mockdata = mockdata_double()
+    MODEL = 'deepseek-chat'  # or 'sonar', 'r1-1776', etc.
+    # MODEL = None  # Uncomment to disable AI analysis
+    
+    # Uncomment to test the function
+    print(analyze_products(mockdata))

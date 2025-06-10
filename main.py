@@ -3,6 +3,7 @@ import os
 import logging
 import sys
 import colorlog
+from datetime import datetime
 from dotenv import load_dotenv,set_key
 
 from wallapop.wallapop import search_wallapop, getUserReviews
@@ -55,22 +56,40 @@ def main():
             for params in gsheets.readSpreadsheet(GCREDS, SPREADSHEET_ID):
                 new_items = search_wallapop(params, REFRESH_TIME)
                 if new_items:
-                    message = analyze_products(new_items)
-                    # print(message)
-                    # for item in new_items:
-                    #     reviews = getUserReviews(item['user_id'])
-                    #     message = (
-                    #         f"<b>{item['title']}</b>\n"
-                    #         f"<b>Precio:</b> {item['price']}€\n"
-                    #         # f"<b>Última Modificación:</b> {item[3]}\n"
-                    #         f"<b>Descripción:</b> {item['description']}\n"
-                    #         f"<b>Ubicación:</b> {item['location']}\n"
-                    #         f"<b>URL:</b> <a href='{item['item_url']}'>{item['item_url']}</a>\n"
-                    #         f"<b>Valoración del vendedor:</b> {reviews} / 100\n"
-                    #     )
+                    products = analyze_products(new_items)
+                    if products == -1:
+                        for product in new_items:
+                            print(f"Título: {product["title"]}")
+                            print(f"Precio de Wallapop: {product["price"]} €")
+                            print(f"Ubicación: {product["location"]}")
+                            print(f"Fecha de modificación: {product['date']}")
+                            print(f"Valoración del vendedor: {getUserReviews(product['user_id'])}")
+                            print(f"Link del producto: {product["item_url"]}\n")
+                    else:
+                        for product in products:
+                            print(f"Título: {product.title}")
+                            print(f"Precio recomendado por la IA: {product.max_price} €")
+                            print(f"Precio de Wallapop: {product.price} €")
+                            print(f"Ubicación: {product.location}")
+                            print(f"Fecha de modificación: {product.date.strftime('%Y-%m-%d %H:%M:%S')}")
+                            print(f"Valoración del vendedor: {product.user_rating}")
+                            print(f"Análisis: {product.analysis}")
+                            print(f"Puntuación de compra: {product.score}")
+                            print(f"Link del producto: {product.item_url}\n")
+                    # message = (
+                    #     "f<b>{product.title}</b>\n"
+                    #     f"<b>Precio recomendado por la IA:</b> {product.max_price}€\n"
+                    #     f"<b>Precio de Wallapop:</b> {product.price}€\n"
+                    #     f"<b>Ubicación:</b> {product.location}\n"
+                    #     f"<b>Fecha de modificación:</b> {product.date.strftime('%Y-%m-%d %H:%M:%S')}\n"
+                    #     f"<b>Valoración del vendedor:</b> {product.user_rating}\n"
+                    #     f"<b>Análisis:</b> {product.analysis}\n"
+                    #     f"<b>Puntuación de compra:</b> {product.score}\n"
+                    #     f"<b>Link del producto:</b> <a href='{product.item_url}'>{product.item_url}</a>\n"
+                    # )
 
-                    #     logger.info(f"New Item: {item['title']}")
-                    #     # send_telegram(message, TELEGRAM_CHAT_ID)
+                    #     logger.info(f"New Item: {product.title}")
+                    #     send_telegram(message, TELEGRAM_CHAT_ID)
                     logger.info(f"Telegram message sent. Sleeping {REFRESH_TIME} seconds until next check.")
                 else:
                     logger.info(f"No new items found for {params['ITEM']}. Sleeping {REFRESH_TIME} seconds until next check.")
