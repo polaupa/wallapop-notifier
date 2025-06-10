@@ -1,9 +1,13 @@
 services:
   wallapop:
-    name: wallapop-notifier
+    container_name: wallapop-notifier
     build:
       # context: https://github.com/polaupa/wallapop-notifier.git
       context: .
       dockerfile: Dockerfile
     env_file:
       - .env
+      
+    # Remove for production environments
+    volumes:
+      - .:/app

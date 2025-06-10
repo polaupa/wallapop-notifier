@@ -1,50 +1,101 @@
-# Wallapop Telegram Bot
+# Wallapop Notifier Bot
 
+A Telegram bot that monitors Wallapop searches and notifies you of interesting new items, using AI for product analysis and Google Sheets for search configuration.
 
 ---
 
-## Configuración
+## Features
 
-1. **Clonar el repositorio:**
-```
-git clone https://github.com/polaupa/wallapop-scrap.git
-cd wallapop-scrap
+- **Wallapop Scraper:** Finds new items matching your criteria.
+- **AI Analysis:** Uses LLMs to analyze and score products.
+- **Google Sheets Integration:** Configure your searches in a spreadsheet.
+- **Telegram Notifications:** Sends you alerts for interesting items.
+
+---
+
+## Quick Start
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/polaupa/wallapop-notifier.git
+cd wallapop-notifier
 ```
 
-2. **Crear fichero .env y configurar los campos:**
+### 2. Set Up Environment Variables
 
-```
+Copy the example file and fill in your values:
+
+```bash
 cp .env.example .env
 ```
-Ejemplo:
-```
-TELEGRAM_TOKEN=TOKEN DE TU BOT DE TELEGRAM
-MIN_PRICE=10 # En Euro
-MAX_PRICE=30 # En Euro
-ITEM=Mando Nintendo Switch # Nombre de tu búsqueda
-REFRESH_TIME=120 # Tiempo entre notificaciones (en segundos)
-LONGITUDE=2.1699187 #Por defecto sale Barcelona
-LATITUDE=41.38791
-DISTANCE=30 # Radio de la búsqueda en km
+
+Edit `.env` and set:
+
+- `TELEGRAM_TOKEN` — Your Telegram bot token ([how to get one](https://core.telegram.org/bots/tutorial))
+- `SPREADSHEET_ID` — Your Google Sheets spreadsheet ID
+- `AI_MODEL_API_KEY` — (Optional) API key for your AI model
+- `AI_MODEL` — (Optional) Model name, e.g. `deepseek-chat`, `sonar`, etc.
+
+### 3. Set Up Google Sheets
+
+- Share your spreadsheet with your Google API service account ([Google Instructions](https://developers.google.com/workspace/guides/create-credentials?hl=es-419))
+- Set the `credentials.json` in `google_utils/credentials.json` 
+- The spreadsheet should have exactly these columns: `ITEM`, `MIN_PRICE`, `MAX_PRICE`, `LONGITUDE`, `LATITUDE`, `DISTANCE`.
+- The only mandatory item is `ITEM`.
+-  `MIN_PRICE`, `MAX_PRICE`, `LONGITUDE`, `LATITUDE`, `DISTANCE`, if you don't want to configure them, just put a `-`
+
+### 4. Run the bot
+
+# Locally
+
+```bash
+pip install -r requirements.txt
 ```
 
-Para crear tu bot de Telegram y obtener el token puedes mirar la [documentación de Telegram oficial](https://core.telegram.org/bots/tutorial)
-
-3. **Despliegue con Docker:**
+```bash
+python -m wallapop.main
 ```
+
+# Or with Docker:
+
+```bash
 docker-compose up --build -d
 ```
 
-Si se quiere hacer algún cambio en el fichero `.env`, solo hay que desplegar de nuevo el contenedor con el mismo comando.
+---
 
-4. **Arrancar el bot:**
+## Usage
 
-En el chat del bot que has creado, hay que escribir `/start` para empezar a recibir las notificaciones.
+- Start your Telegram bot and send `/start` to it.
+- The bot will prompt you for your chat ID and save it in `.env`.
+- The bot will check your Google Sheet for searches and notify you of new interesting items.
 
-5. **Parar el bot:**
-```
+---
+
+## Stopping the Bot
+
+If running with Docker:
+
+```bash
 docker kill wallapop-wallapop-1
 docker rm wallapop-wallapop-1
+```
+
+---
+
+## Project Structure
+
+```
+.
+├── wallapop/           # Main app logic (scraper, AI, etc)
+├── google_utils/       # Google Sheets integration
+├── telegram_utils/     # Telegram bot utilities
+├── main.py             # Entry point
+├── requirements.txt
+├── docker-compose.yaml
+├── Dockerfile
+└── .env.example
 ```
 
 ---
@@ -52,3 +103,9 @@ docker rm wallapop-wallapop-1
 ## License
 
 MIT
+
+---
+
+## Credits
+
+Created by [polaupa](https://github.com/polaupa)
