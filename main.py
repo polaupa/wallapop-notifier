@@ -8,7 +8,7 @@ from dotenv import load_dotenv,set_key
 
 from wallapop.wallapop import search_wallapop, getUserReviews
 import google_utils.gsheets as gsheets
-from telegram_utils.telegram_utils import send_telegram, get_chat_id
+from telegram_utils.telegram_utils import send_telegram, get_chat_id, html_parse
 from wallapop.ai_analysis import analyze_products
 
 
@@ -57,42 +57,35 @@ def main():
                 new_items = search_wallapop(params, REFRESH_TIME)
                 if new_items:
                     products = analyze_products(new_items)
-                    if products == -1:
-                        for product in new_items:
-                            print(f"Título: {product["title"]}")
-                            print(f"Precio de Wallapop: {product["price"]} €")
-                            print(f"Ubicación: {product["location"]}")
-                            print(f"Fecha de modificación: {product['date']}")
-                            print(f"Valoración del vendedor: {getUserReviews(product['user_id'])}")
-                            print(f"Link del producto: {product["item_url"]}\n")
-                    else:
-                        for product in products:
-                            print(f"Título: {product.title}")
-                            print(f"Precio recomendado por la IA: {product.max_price} €")
-                            print(f"Precio de Wallapop: {product.price} €")
-                            print(f"Ubicación: {product.location}")
-                            print(f"Fecha de modificación: {product.date.strftime('%Y-%m-%d %H:%M:%S')}")
-                            print(f"Valoración del vendedor: {product.user_rating}")
-                            print(f"Análisis: {product.analysis}")
-                            print(f"Puntuación de compra: {product.score}")
-                            print(f"Link del producto: {product.item_url}\n")
-                    # message = (
-                    #     "f<b>{product.title}</b>\n"
-                    #     f"<b>Precio recomendado por la IA:</b> {product.max_price}€\n"
-                    #     f"<b>Precio de Wallapop:</b> {product.price}€\n"
-                    #     f"<b>Ubicación:</b> {product.location}\n"
-                    #     f"<b>Fecha de modificación:</b> {product.date.strftime('%Y-%m-%d %H:%M:%S')}\n"
-                    #     f"<b>Valoración del vendedor:</b> {product.user_rating}\n"
-                    #     f"<b>Análisis:</b> {product.analysis}\n"
-                    #     f"<b>Puntuación de compra:</b> {product.score}\n"
-                    #     f"<b>Link del producto:</b> <a href='{product.item_url}'>{product.item_url}</a>\n"
-                    # )
-
+                    for product in products:
+                        html_product = html_parse(product)
+                        send_telegram(html_product, TELEGRAM_CHAT_ID)
+                    # if products == -1:
+                    #     for product in new_items:
+                    #         html_products = html_parse(product)
+                    #         print(f"Título: {product["title"]}")
+                    #         print(f"Precio de Wallapop: {product["price"]} €")
+                    #         print(f"Ubicación: {product["location"]}")
+                    #         print(f"Fecha de modificación: {product['date']}")
+                    #         print(f"Valoración del vendedor: {getUserReviews(product['user_id'])}")
+                    #         print(f"Link del producto: {product["item_url"]}\n")
+                    # else:
+                    #     for product in products:
+                    #         html_products = html_parse(product)
+                    #         print(f"Título: {product.title}")
+                    #         print(f"Precio recomendado por la IA: {product.max_price} €")
+                    #         print(f"Precio de Wallapop: {product.price} €")
+                    #         print(f"Ubicación: {product.location}")
+                    #         print(f"Fecha de modificación: {product.date.strftime('%Y-%m-%d %H:%M:%S')}")
+                    #         print(f"Valoración del vendedor: {product.user_rating}")
+                    #         print(f"Análisis: {product.analysis}")
+                    #         print(f"Puntuación de compra: {product.score}")
+                    #         print(f"Link del producto: {product.item_url}\n")
                     #     logger.info(f"New Item: {product.title}")
                     #     send_telegram(message, TELEGRAM_CHAT_ID)
-                    logger.info(f"Telegram message sent. Sleeping {REFRESH_TIME} seconds until next check.")
+                    logger.info(f"Telegram message sent. Sleeping {round(REFRESH_TIME/60,2)} minutes until next check.")
                 else:
-                    logger.info(f"No new items found for {params['ITEM']}. Sleeping {REFRESH_TIME} seconds until next check.")
+                    logger.info(f"No new items found for {params['ITEM']}. Sleeping {round(REFRESH_TIME/60,2)} minutes until next check.")
             time.sleep(REFRESH_TIME)
     except KeyboardInterrupt:
         logger.warning("KeyboardInterrupt detected. Exiting...")

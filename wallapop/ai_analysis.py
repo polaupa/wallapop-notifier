@@ -44,10 +44,13 @@ class Product(BaseModel):
     score: int
     item_url: str
 
+class Products(BaseModel):
+    products: list[Product]
+
 class CombinedProduct(BaseModel):
     title: str
-    price: int
-    max_price: int
+    price: float
+    max_price: float 
     analysis: str
     description: str
     location: str
@@ -57,18 +60,30 @@ class CombinedProduct(BaseModel):
     score: int
     item_url: str
 
-class Products(BaseModel):
-    products: list[Product]
+class BaseProduct(BaseModel):
+    title: str
+    price: float
+    item_url: str
+    description: str 
+    location: str 
+    date: datetime
+    user_id: str
+
 
 def analyze_products(products_data):
     if MODEL == None:
         logger.warning("No AI model selected.")
-        return -1
+        products = [
+            BaseProduct(**item) if not isinstance(item, BaseProduct) else item
+            for item in products_data
+        ]
+        return products
     logger.info(f"Analyzing with {MODEL} ...")
     system_content =  [
         {"type": "text", "text": "Eres un analista de productos de segunda mano. Recibirás datos de uno o varios producto de Wallapop, y tienes que decidir si es una ganga o no. Se muy estricto. La fecha que aparece, es correcta, ahora estamos en tu futuro."},
         {"type": "text", "text": "Responde con un JSON para todos, sin dejarte ninguno de los productos que te he pasado. Debe tener exactamente el siguiente formato:"},
         {"type": "text", "text": json.dumps(Products.model_json_schema())},
+        {"type": "text", "text": "En title, dame el título correcto para ese producto, en base al título orifinal y descripción."}, 
         {"type": "text", "text": "En análisis, tienes que argumentar por qué es una buena o mala compra, diciendo los pros y contras (si tiene). Ten en cuenta el precio comparado con la antigüedad y estado, la descripción y características, y precio de mercado de segunda mano. Son vendedores legítimos, no tengas en cuenta cosas de estafa, es todo fiable."}, 
         {"type": "text", "text": "En análisis, también dame un pequeño resumen del producto, basado en el título y la descripción."}, 
         {"type": "text", "text": "En score, puntúa sobre 100, teniendo en cuenta tu análisis, si lo debería comprar o no. Puedes basarte en: (0-30): Mala compra (precio > mercado), (31-70): Oportunidad regular, (71-100): Gangazo"},
