@@ -35,19 +35,24 @@ Edit `.env` and set:
 - `TELEGRAM_TOKEN` — Your Telegram bot token ([how to get one](https://core.telegram.org/bots/tutorial))
 - `SPREADSHEET_ID` — Your Google Sheets spreadsheet ID
 - `AI_MODEL_API_KEY` — (Optional) API key for your AI model
-- `AI_MODEL` — (Optional) Model name, e.g. `deepseek-chat`, `sonar`, etc.
+- `AI_MODEL` — (Optional) Model name. At this moment accepts `deepseek-chat`, `sonar` or `r1-1776`
+
+- \* Note that if you don't set AI, you won't have access to AI features, and you will only retrieve the Wallapop data - which works fine. 
 
 ### 3. Set Up Google Sheets
 
 - Share your spreadsheet with your Google API service account ([Google Instructions](https://developers.google.com/workspace/guides/create-credentials?hl=es-419))
 - Set the `credentials.json` in `google_utils/credentials.json` 
-- The spreadsheet should have exactly these columns: `ITEM`, `MIN_PRICE`, `MAX_PRICE`, `LONGITUDE`, `LATITUDE`, `DISTANCE`.
+- The spreadsheet should have this format:
+| MIN_PRICE | MAX_PRICE | ITEM      | LONGITUDE | LATITUDE | DISTANCE |
+|-----------|-----------|-----------|-----------|----------|----------|
+| -         | -         | item_name | -         | -        | -        |
 - The only mandatory item is `ITEM`.
--  `MIN_PRICE`, `MAX_PRICE`, `LONGITUDE`, `LATITUDE`, `DISTANCE`, if you don't want to configure them, just put a `-`
-
+- If you don't want to configure `MIN_PRICE`, `MAX_PRICE`, `LONGITUDE`, `LATITUDE`, `DISTANCE`: Just put a  `-`
+LO
 ### 4. Run the bot
 
-# Locally
+#### Locally
 
 ```bash
 pip install -r requirements.txt
@@ -57,7 +62,7 @@ pip install -r requirements.txt
 python -m wallapop.main
 ```
 
-# Or with Docker:
+#### With Docker:
 
 ```bash
 docker-compose up --build -d

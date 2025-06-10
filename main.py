@@ -69,7 +69,7 @@ def main():
                             send_telegram(html_product, TELEGRAM_CHAT_ID)
                             logger.info(f"Item: {product.title} is interesting (score: {product.score}). Telegram message sent.")
                         else:
-                            logger.debug(f"Item: {product.title} is not interesting enough (score: {product.score}). Skipping.")
+                            logger.debug(f"Item: {product.title} is not interesting enough (score: {product.score}, price {product.price}). Skipping.")
                             logger.debug(product.analysis)
                 else:
                     logger.info(f"No new items found for {params['ITEM']}.")
