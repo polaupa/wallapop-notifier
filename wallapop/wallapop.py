@@ -47,7 +47,7 @@ def search_wallapop(params, REFRESH_TIME=120):
     base_url = "https://api.wallapop.com/api/v3/search"
     query_string = urlencode(query_dict)
     url = f"{base_url}?{query_string}"
-    logger.info(f"Searching for {params['ITEM']} at {url}")
+    logger.info(f"Searching for {params['ITEM']} at https://es.wallapop.com/search?{query_string}")
 
     # logger.info(f'API Endpoint: {url}')
     
