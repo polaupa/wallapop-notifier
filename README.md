@@ -37,19 +37,19 @@ Edit `.env` and set:
 - `AI_MODEL_API_KEY` — (Optional) API key for your AI model
 - `AI_MODEL` — (Optional) Model name. At this moment accepts `deepseek-chat`, `sonar` or `r1-1776`
 
-- \* Note that if you don't set AI, you won't have access to AI features, and you will only retrieve the Wallapop data - which works fine. 
+\* Note that if you don't set AI, you won't have access to AI features, and you will only retrieve the Wallapop data - which works fine. 
 
 ### 3. Set Up Google Sheets
 
 - Share your spreadsheet with your Google API service account ([Google Instructions](https://developers.google.com/workspace/guides/create-credentials?hl=es-419))
 - Set the `credentials.json` in `google_utils/credentials.json` 
 - The spreadsheet should have this format:
+  
 | MIN_PRICE | MAX_PRICE | ITEM      | LONGITUDE | LATITUDE | DISTANCE |
 |-----------|-----------|-----------|-----------|----------|----------|
 | -         | -         | item_name | -         | -        | -        |
 - The only mandatory item is `ITEM`.
-- If you don't want to configure `MIN_PRICE`, `MAX_PRICE`, `LONGITUDE`, `LATITUDE`, `DISTANCE`: Just put a  `-`
-LO
+
 ### 4. Run the bot
 
 #### Locally
@@ -100,7 +100,7 @@ docker rm wallapop-wallapop-1
 ├── requirements.txt
 ├── docker-compose.yaml
 ├── Dockerfile
-└── .env.example
+└── .env
 ```
 
 ---
