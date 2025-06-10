@@ -47,7 +47,7 @@ def search_wallapop(params, REFRESH_TIME=120):
     base_url = "https://api.wallapop.com/api/v3/search"
     query_string = urlencode(query_dict)
     url = f"{base_url}?{query_string}"
-    logger.info(f"Searching for {params['ITEM']} at {url}")
+    logger.info(f"Searching for {params['ITEM']} at https://es.wallapop.com/search?{query_string}")
 
     # logger.info(f'API Endpoint: {url}')
     
@@ -71,9 +71,7 @@ def search_wallapop(params, REFRESH_TIME=120):
         # If item is newer than REFRESH_TIME seconds, append it
         if difference.seconds < REFRESH_TIME:
             new_items.append({'title':title, 'description':description, 'price':price, 'date':date, 'item_url':item_url, 'location':location, 'user_id': user_id})
-    if not new_items:
-        logger.info(f"No new items found for {params['ITEM']} :(")
-    else:
+    if new_items:
         logger.info(f"Found {len(new_items)} new items for {params['ITEM']} :)")
     
     return new_items
