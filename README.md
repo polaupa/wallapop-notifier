@@ -44,11 +44,11 @@ Edit `.env` and set:
 - Share your spreadsheet with your Google API service account ([Google Instructions](https://developers.google.com/workspace/guides/create-credentials?hl=es-419))
 - Set the `credentials.json` in `google_utils/credentials.json` 
 - The spreadsheet should have this format:
-| MIN_PRICE | MAX_PRICE | ITEM      | LONGITUDE | LATITUDE | DISTANCE |
-|-----------|-----------|-----------|-----------|----------|----------|
-| -         | -         | item_name | -         | -        | -        |
+| MIN_PRICE | MAX_PRICE | ITEM      | LONGITUDE | LATITUDE | DISTANCE | PROMPT |
+|-----------|-----------|-----------|-----------|----------|----------|--------|
+| -         | -         | item_name | -         | -        | -        | -      | 
 - The only mandatory item is `ITEM`.
-- If you don't want to configure `MIN_PRICE`, `MAX_PRICE`, `LONGITUDE`, `LATITUDE`, `DISTANCE`: Just put a  `-`
+- If you don't want to configure `MIN_PRICE`, `MAX_PRICE`, `LONGITUDE`, `LATITUDE`, `DISTANCE`, `PROMPT`: Just put a  `-`
 LO
 ### 4. Run the bot
 

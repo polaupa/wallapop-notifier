@@ -5,6 +5,8 @@ import sys
 import colorlog
 from datetime import datetime
 from dotenv import load_dotenv,set_key
+from googleapiclient.errors import HttpError
+
 
 from wallapop.wallapop import search_wallapop, getUserReviews
 import google_utils.gsheets as gsheets
@@ -53,11 +55,16 @@ def main():
 
     try:
         while True:
+            try:
+                spreadsheet = gsheets.readSpreadsheet(GCREDS, SPREADSHEET_ID)
+            except HttpError as e:
+                logger.warning(f"Token Expired: {e}")
+                GCREDS = gsheets.googleLogin()
 
-            for params in gsheets.readSpreadsheet(GCREDS, SPREADSHEET_ID):
+            for params in spreadsheet:
                 new_items = search_wallapop(params, REFRESH_TIME)
                 if new_items:
-                    products = analyze_products(new_items)
+                    products = analyze_products(new_items, params['PROMPT'])
                     for product in products:
                         if product.score == None and product.user_reviews > 0:
                             html_product = html_parse(product)

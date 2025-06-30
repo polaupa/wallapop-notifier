@@ -71,7 +71,7 @@ class BaseProduct(BaseModel):
     user_id: str
 
 
-def analyze_products(products_data):
+def analyze_products(products_data, prompt):
     if MODEL == None:
         logger.warning("No AI model selected.")
         products = [
@@ -88,17 +88,23 @@ def analyze_products(products_data):
         {"type": "text", "text": json.dumps(Products.model_json_schema())},
         {"type": "text", "text": "En title, dame el título correcto para ese producto, en base al título orifinal y descripción."}, 
         {"type": "text", "text": "En análisis, tienes que argumentar por qué es una buena o mala compra, diciendo los pros y contras (si tiene). Ten en cuenta el precio comparado con la antigüedad y estado, la descripción y características, y precio de mercado de segunda mano. Son vendedores legítimos, no tengas en cuenta cosas de estafa, es todo fiable."}, 
-        {"type": "text", "text": "En análisis, también dame un pequeño resumen del producto, basado en el título y la descripción."}, 
         {"type": "text", "text": "En score, puntúa sobre 100, teniendo en cuenta tu análisis, si lo debería comprar o no. Puedes basarte en: (0-30): Mala compra (precio > mercado), (31-70): Oportunidad regular, (71-100): Gangazo"},
         {"type": "text", "text": "En max_price, pon el precio que creas que debería tener, para que tu lo puntuaras con un 85 de score."}, 
-        {"type": "text", "text": "El item_url, tiene que ser exactamente el mismo que te he pasado, no lo modifiques."}, 
+        {"type": "text", "text": "El item_url, tiene que ser exactamente el mismo que te he pasado, no lo modifiques."},    
     ]
+    if prompt == '-':
+        user_content = [
+            {"type": "text", "text": f"Quiero comprarme :{products_data[0]['title']}. Aquí tienes los datos de {len(products_data)} productos:"},
+            {"type": "text", "text": f"{products_data}"},
+            {"type": "text", "text": "Cuáles de estos productos son una ganga que merezca la pena comprar?"},
+        ]
+    else:
+        user_content = [
+            {"type": "text", "text": f"Quiero comprarme :{products_data[0]['title']}. Aquí tienes los datos de {len(products_data)} productos:"},
+            {"type": "text", "text": f"{products_data}"},
+            {"type": "text", "text": prompt},
+        ]
 
-    user_content = [
-                    {"type": "text", "text": "Analiza el siguiente producto de Wallapop:"},
-                    {"type": "text", "text": f"{products_data}"},
-                    {"type": "text", "text": "¿Es una buena compra?"},
-                ]
 
     messages = [{"role": "system", "content": system_content},
                 {"role": "user", "content": user_content}]
@@ -248,4 +254,4 @@ if __name__ == "__main__":
     # MODEL = None  # Uncomment to disable AI analysis
     
     # Uncomment to test the function
-    print(analyze_products(mockdata))
+    print(analyze_products(mockdata, '-'))
