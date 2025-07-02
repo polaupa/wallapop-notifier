@@ -76,6 +76,6 @@ def readSpreadsheet(creds,SPREADSHEET_ID):
 
 if __name__ == "__main__":
     creds = googleLogin()
-    busquedas = readSpreadsheet(creds)
+    busquedas = readSpreadsheet(creds, '1XDb0I4JTaUx66iK_ptiib0OxFochIGq2XP5xNSLLSu4')
     for b in busquedas:
         print(b['MIN_PRICE'])

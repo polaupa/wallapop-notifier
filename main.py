@@ -70,11 +70,12 @@ def main():
                             html_product = html_parse(product)
                             send_telegram(html_product, TELEGRAM_CHAT_ID)
                         elif product.user_reviews == 0:
-                            logger.info(f"Item: {product.title} has no user reviews. Skipping.")
+                            logger.debug(f"Item: {product.title} has no user reviews. Skipping.")
                         elif product.score > MIN_SCORE and product.user_reviews > 0:
                             html_product = html_parse(product)
                             send_telegram(html_product, TELEGRAM_CHAT_ID)
-                            logger.info(f"Item: {product.title} is interesting (score: {product.score}). Telegram message sent.")
+                            logger.info(f"Item: {product.title} is interesting (score: {product.score}, price {product.price}). Telegram message sent.")
+                            logger.debug(product.analysis)
                         else:
                             logger.debug(f"Item: {product.title} is not interesting enough (score: {product.score}, price {product.price}). Skipping.")
                             logger.debug(product.analysis)

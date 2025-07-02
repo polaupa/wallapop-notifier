@@ -40,7 +40,7 @@ def search_wallapop(params, REFRESH_TIME=120):
         "order_by": "newest",
         "min_sale_price": params['MIN_PRICE'],
         "max_sale_price": params['MAX_PRICE'],
-        "distance_in_km": params['DISTANCE'],
+        "distance_in_km": int(params['DISTANCE']) if str(params['DISTANCE']) not in ("", "-", "nan", None) else "-",
     }
     query_dict = {k: v for k, v in query_dict.items() if str(v) not in ("", "-", "nan", None)}
 
@@ -53,7 +53,12 @@ def search_wallapop(params, REFRESH_TIME=120):
     
     headers = getHeaders()
     response = requests.get(url, headers=headers)
-    data = response.json()
+    try:
+        data = response.json()
+    except Exception as e:
+        logger.error(f"Error parsing JSON response: {e}")
+        logger.error(f"Response content: {response.content}")
+        return []
     current_date = datetime.now()
     new_items = []
 

@@ -94,13 +94,13 @@ def analyze_products(products_data, prompt):
     ]
     if prompt == '-':
         user_content = [
-            {"type": "text", "text": f"Quiero comprarme :{products_data[0]['title']}. Aquí tienes los datos de {len(products_data)} productos:"},
+            {"type": "text", "text": f"Quiero comprarme :{products_data[0]['title']}. Si lo que te he pasado no coincide con lo que busco, ponle mala nota. Aquí tienes los datos de {len(products_data)} productos:"},
             {"type": "text", "text": f"{products_data}"},
             {"type": "text", "text": "Cuáles de estos productos son una ganga que merezca la pena comprar?"},
         ]
     else:
         user_content = [
-            {"type": "text", "text": f"Quiero comprarme :{products_data[0]['title']}. Aquí tienes los datos de {len(products_data)} productos:"},
+            {"type": "text", "text": f"Quiero comprarme :{products_data[0]['title']}. Si lo que te he pasado no coincide con lo que busco, ponle mala nota. Aquí tienes los datos de {len(products_data)} productos:"},
             {"type": "text", "text": f"{products_data}"},
             {"type": "text", "text": prompt},
         ]
