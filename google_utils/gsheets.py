@@ -37,7 +37,13 @@ def googleLogin():
     # If there are no (valid) credentials available, let the user log in.
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
+            logger.warning("Credetials expired, refreshing...")
+            try:
+                creds.refresh(Request())
+                logger.info("Credentials refreshed successfully")
+            except RefreshError as e:
+                logger.error("Failed to refresh credentials: %s", e)
+                creds = None
         else:
             flow = InstalledAppFlow.from_client_secrets_file(
                 "google_utils/google-credentials.json", SCOPES
@@ -50,7 +56,7 @@ def googleLogin():
     
     return creds
 
-def readSpreadsheet(creds,SPREADSHEET_ID):
+def readSpreadsheetWithAuth(creds, SPREADSHEET_ID):
     
     service = build('sheets', 'v4', credentials=creds)
     sheet = service.spreadsheets()
@@ -68,6 +74,19 @@ def readSpreadsheet(creds,SPREADSHEET_ID):
 
     # Convertimos a DataFrame para facilitar el manejo de tipos
     df = pd.DataFrame(data, columns=columns)
+
+    return parseSpreadsheet(df)
+
+def readSpreadsheetWithoutAuth(SPREADSHEET_PUBLIC_URL):
+    df = pd.read_csv(SPREADSHEET_PUBLIC_URL)
+    if df.empty:
+        logger.error("No data found. Empty SpreadSheet")
+        return []
+    return parseSpreadsheet(df)
+
+
+def parseSpreadsheet(df):
+
     for col in ['MIN_PRICE', 'MAX_PRICE', 'LONGITUDE', 'LATITUDE', 'DISTANCE']:
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors='coerce')
@@ -75,7 +94,8 @@ def readSpreadsheet(creds,SPREADSHEET_ID):
     return df.to_dict(orient='records')
 
 if __name__ == "__main__":
-    creds = googleLogin()
-    busquedas = readSpreadsheet(creds, '1XDb0I4JTaUx66iK_ptiib0OxFochIGq2XP5xNSLLSu4')
+    # creds = googleLogin()
+    # busquedas = readSpreadsheetWithAuth(creds, '1XDb0I4JTaUx66iK_ptiib0OxFochIGq2XP5xNSLLSu4')
+    busquedas = readSpreadsheetWithoutAuth("")
     for b in busquedas:
         print(b['MIN_PRICE'])

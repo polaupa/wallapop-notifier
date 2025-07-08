@@ -43,20 +43,30 @@ def main():
     load_dotenv(ENV_PATH)
     TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
     SPREADSHEET_ID = os.getenv("SPREADSHEET_ID")
+    SPREADSHEET_PUBLIC_URL_CSV = os.getenv("SPREADSHEET_PUBLIC_URL_CSV")
 
     if not TELEGRAM_CHAT_ID:
         TELEGRAM_CHAT_ID = get_chat_id()
         set_key(ENV_PATH, "TELEGRAM_CHAT_ID", TELEGRAM_CHAT_ID)
         logger.info("Telegram Chat ID saved in .env file.")
     else:
-        logger.info(f"Using Telegram Chat ID: {TELEGRAM_CHAT_ID}")
+        logger.info(f"Using Telegram Chat ID: {TELEGRAM_CHAT_ID}")    
+    
+    if not SPREADSHEET_ID:
+        GCREDS = None
+        logger.info("Public Google Sheets URL provided, no authentication needed.")
+    else:
+        GCREDS = gsheets.googleLogin()
+        logger.info("Google Sheets credentials loaded successfully.")
 
-    GCREDS = gsheets.googleLogin()
 
     try:
         while True:
             try:
-                spreadsheet = gsheets.readSpreadsheet(GCREDS, SPREADSHEET_ID)
+                if GCREDS:
+                    spreadsheet = gsheets.readSpreadsheetWithAuth(GCREDS, SPREADSHEET_ID)
+                else:
+                    spreadsheet = gsheets.readSpreadsheetWithoutAuth(SPREADSHEET_PUBLIC_URL_CSV)
             except HttpError as e:
                 logger.warning(f"Token Expired: {e}")
                 GCREDS = gsheets.googleLogin()
@@ -64,7 +74,7 @@ def main():
             for params in spreadsheet:
                 new_items = search_wallapop(params, REFRESH_TIME)
                 if new_items:
-                    products = analyze_products(new_items, params['PROMPT'])
+                    products = analyze_products(new_items, params['ITEM'], params['PROMPT'])
                     for product in products:
                         if product.score == None and product.user_reviews > 0:
                             html_product = html_parse(product)

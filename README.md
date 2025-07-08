@@ -33,9 +33,13 @@ cp .env.example .env
 Edit `.env` and set:
 
 - `TELEGRAM_TOKEN` — Your Telegram bot token ([how to get one](https://core.telegram.org/bots/tutorial))
-- `SPREADSHEET_ID` — Your Google Sheets spreadsheet ID
+- `SPREADSHEET_ID` — Your Google Sheets spreadsheet ID (It is the ID in the link of the docs.google.com/spreadsheets/d/**SPREADSHEET_ID**/edit?gid=0#gid=0)
+- `SPREADSHEET_PUBLIC_URL_CSV` (You have to make your spreadsheet public or to set up Google Sheets - Step 3) - Your CSV public URL ([how to get one](https://support.google.com/docs/answer/183965?hl=en&co=GENIE.Platform%3DDesktop))
 - `AI_MODEL_API_KEY` — (Optional) API key for your AI model
-- `AI_MODEL` — (Optional) Model name. At this moment accepts `deepseek-chat`, `sonar` or `r1-1776`
+- `AI_MODEL` — (Optional) Model name. At this moment accepts:
+    - `deepseek-chat`: https://platform.deepseek.com/api_keys
+    - `sonar`, `r1-1776`: https://www.perplexity.ai/account/api/keys
+    - `gemini-2.5-pro`: https://aistudio.google.com/apikey -> This is free!
 
 - \* Note that if you don't set AI, you won't have access to AI features, and you will only retrieve the Wallapop data - which works fine. 
 
@@ -57,10 +61,7 @@ LO
 
 ```bash
 pip install -r requirements.txt
-```
-
-```bash
-python -m wallapop.main
+python main.py
 ```
 
 #### With Docker:

@@ -25,6 +25,8 @@ if MODEL:
         base_url = "https://api.deepseek.com"
     elif MODEL == "sonar" or MODEL == "r1-1776" or MODEL == "sonar-pro":
         base_url = "https://api.perplexity.ai"
+    elif MODEL == "gemini-2.5-flash" or MODEL == "gemini-2.5-pro":
+        base_url = "https://generativelanguage.googleapis.com/v1beta/"
     else:
         logger.error(f"Model {MODEL} not supported. Not using AI.")
         MODEL = None
@@ -71,7 +73,7 @@ class BaseProduct(BaseModel):
     user_id: str
 
 
-def analyze_products(products_data, prompt):
+def analyze_products(products_data, item_name, prompt):
     if MODEL == None:
         logger.warning("No AI model selected.")
         products = [
@@ -86,7 +88,7 @@ def analyze_products(products_data, prompt):
         {"type": "text", "text": "Eres un analista de productos de segunda mano. Recibirás datos de uno o varios producto de Wallapop, y tienes que decidir si es una ganga o no. Se muy estricto. La fecha que aparece, es correcta, ahora estamos en tu futuro."},
         {"type": "text", "text": "Responde con un JSON para todos, sin dejarte ninguno de los productos que te he pasado. Debe tener exactamente el siguiente formato:"},
         {"type": "text", "text": json.dumps(Products.model_json_schema())},
-        {"type": "text", "text": "En title, dame el título correcto para ese producto, en base al título orifinal y descripción."}, 
+        {"type": "text", "text": "En title, dame el título correcto para ese producto, en base al título original y descripción."}, 
         {"type": "text", "text": "En análisis, tienes que argumentar por qué es una buena o mala compra, diciendo los pros y contras (si tiene). Ten en cuenta el precio comparado con la antigüedad y estado, la descripción y características, y precio de mercado de segunda mano. Son vendedores legítimos, no tengas en cuenta cosas de estafa, es todo fiable."}, 
         {"type": "text", "text": "En score, puntúa sobre 100, teniendo en cuenta tu análisis, si lo debería comprar o no. Puedes basarte en: (0-30): Mala compra (precio > mercado), (31-70): Oportunidad regular, (71-100): Gangazo"},
         {"type": "text", "text": "En max_price, pon el precio que creas que debería tener, para que tu lo puntuaras con un 85 de score."}, 
@@ -94,15 +96,15 @@ def analyze_products(products_data, prompt):
     ]
     if prompt == '-':
         user_content = [
-            {"type": "text", "text": f"Quiero comprarme :{products_data[0]['title']}. Si lo que te he pasado no coincide con lo que busco, ponle mala nota. Aquí tienes los datos de {len(products_data)} productos:"},
+            {"type": "text", "text": f"Quiero comprarme: {item_name}. Si lo que te he pasado no coincide con lo que busco, ponle mala nota. Aquí tienes los datos de {len(products_data)} productos:"},
             {"type": "text", "text": f"{products_data}"},
             {"type": "text", "text": "Cuáles de estos productos son una ganga que merezca la pena comprar?"},
         ]
     else:
         user_content = [
-            {"type": "text", "text": f"Quiero comprarme :{products_data[0]['title']}. Si lo que te he pasado no coincide con lo que busco, ponle mala nota. Aquí tienes los datos de {len(products_data)} productos:"},
-            {"type": "text", "text": f"{products_data}"},
+            {"type": "text", "text": f"Quiero comprarme: {item_name}. Si lo que te he pasado no coincide con lo que busco, ponle mala nota. Aquí tienes los datos de {len(products_data)} productos:"},
             {"type": "text", "text": prompt},
+            {"type": "text", "text": f"{products_data}"},
         ]
 
 
@@ -170,6 +172,12 @@ def getPrices():
             "output_tokens": 8 / 1000000,
             "request_price": 0
         }
+    elif MODEL == "gemini-2.5-flash" or MODEL == "gemini-2.5-pro":
+        pricing = {
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "request_price": 0
+        }
     else:
         pass
 
@@ -187,6 +195,12 @@ def getTotalPrice(usage):
             "input_tokens": usage.prompt_tokens, 
             "output_tokens": usage.completion_tokens,
             "request_price": 1
+        }
+    elif MODEL == "gemini-2.5-flash" or MODEL == "gemini-2.5-pro":
+        tokens = {
+            "input_tokens": usage.prompt_tokens,
+            "output_tokens": usage.completion_tokens,
+            "request_price": 0
         }
     else:
         logger.warning(f"Could not calculate price for model {MODEL}.")
@@ -250,8 +264,8 @@ if __name__ == "__main__":
     from wallapop import getUserReviews
     from mockdata import mockdata_multiple, mockdata_simple, mockdata_double
     mockdata = mockdata_double()
-    MODEL = 'deepseek-chat'  # or 'sonar', 'r1-1776', etc.
+    MODEL = 'gemini-2.5-pro'  # or 'sonar', 'r1-1776', etc.
     # MODEL = None  # Uncomment to disable AI analysis
     
     # Uncomment to test the function
-    print(analyze_products(mockdata, '-'))
+    print(analyze_products(mockdata, '-', '-'))
