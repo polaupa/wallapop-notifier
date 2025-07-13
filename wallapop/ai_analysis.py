@@ -7,11 +7,11 @@ import logging
 import os
 from dotenv import load_dotenv
 
-from ai_models import ModelPlatform, Products, CombinedProduct
-from wallapop import getUserReviews
+# from ai_models import ModelPlatform, Products, CombinedProduct
+# from wallapop import getUserReviews
 
-# from wallapop.ai_models import ModelPlatform, Products, CombinedProduct
-# from wallapop.wallapop import getUserReviews
+from wallapop.ai_models import ModelPlatform, Products, CombinedProduct
+from wallapop.wallapop import getUserReviews
 
 
 logger = logging.getLogger("wallapop")
