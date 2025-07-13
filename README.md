@@ -39,6 +39,7 @@ Edit `.env` and set:
 - `AI_MODEL` — (Optional) Model name. At this moment accepts:
     - `deepseek-chat`: https://platform.deepseek.com/api_keys
     - `sonar`, `r1-1776`: https://www.perplexity.ai/account/api/keys
+    - `mistral-large-2411`, `mistral-large-latest`, `mistral-medium-2505`, `magistral-medium-2506`
     - `gemini-2.5-pro`: https://aistudio.google.com/apikey -> This is free!
 
 - \* Note that if you don't set AI, you won't have access to AI features, and you will only retrieve the Wallapop data - which works fine. 
