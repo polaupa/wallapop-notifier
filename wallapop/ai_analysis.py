@@ -133,7 +133,7 @@ def happyHour():
     return happyhourstart <= currenttime <= happyhourend
 
 def getPrices():
-    if MODEL == 'deepseek-chat':
+    if ModelPlatform(MODEL) == "DeepSeek":
         if happyHour():
             pricing = {
                 "input_cache_hit_tokens": 0.035 / 1000000,
@@ -158,7 +158,7 @@ def getPrices():
             "output_tokens": 8 / 1000000,
             "request_price": 0
         }
-    elif MODEL == "gemini-2.5-flash" or MODEL == "gemini-2.5-pro":
+    elif ModelPlatform(MODEL) == "Google Gemini" or ModelPlatform(MODEL) == "Mistral":
         pricing = {
             "input_tokens": 0,
             "output_tokens": 0,
@@ -172,19 +172,19 @@ def getPrices():
     return pricing
 
 def getTotalPrice(usage):
-    if MODEL == 'deepseek-chat':
+    if ModelPlatform(MODEL) == "DeepSeek":
         tokens = {
             "input_cache_hit_tokens": usage.prompt_cache_hit_tokens, 
             "input_cache_miss_tokens": usage.prompt_cache_miss_tokens,
             "output_tokens": usage.completion_tokens
         }
-    elif MODEL == 'sonar' or MODEL == 'r1-1776':
+    elif ModelPlatform(MODEL) == "Perplexity":
         tokens = {
             "input_tokens": usage.prompt_tokens, 
             "output_tokens": usage.completion_tokens,
             "request_price": 1
         }
-    elif MODEL == "gemini-2.5-flash" or MODEL == "gemini-2.5-pro":
+    elif ModelPlatform(MODEL) == "Google Gemini" or ModelPlatform(MODEL) == "Mistral":
         tokens = {
             "input_tokens": usage.prompt_tokens,
             "output_tokens": usage.completion_tokens,

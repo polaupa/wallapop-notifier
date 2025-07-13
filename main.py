@@ -3,6 +3,7 @@ import os
 import logging
 import sys
 import colorlog
+import random
 from datetime import datetime
 from dotenv import load_dotenv,set_key
 from googleapiclient.errors import HttpError
@@ -14,7 +15,7 @@ from telegram_utils.telegram_utils import send_telegram, get_chat_id, html_parse
 from wallapop.ai_analysis import analyze_products
 
 
-REFRESH_TIME = 300
+REFRESH_TIME = 120
 ENV_PATH = '.env'
 MIN_SCORE = 75
 
@@ -73,6 +74,7 @@ def main():
 
             for params in spreadsheet:
                 new_items = search_wallapop(params, REFRESH_TIME)
+                time.sleep(random.uniform(1, 3))
                 if new_items:
                     products = analyze_products(new_items, params['ITEM'], params['PROMPT'])
                     for product in products:
