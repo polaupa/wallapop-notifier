@@ -2,6 +2,8 @@ import os.path
 import logging
 import pandas as pd
 
+from urllib.error import HTTPError, URLError
+
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
@@ -78,7 +80,11 @@ def readSpreadsheetWithAuth(creds, SPREADSHEET_ID):
     return parseSpreadsheet(df)
 
 def readSpreadsheetWithoutAuth(SPREADSHEET_PUBLIC_URL):
-    df = pd.read_csv(SPREADSHEET_PUBLIC_URL)
+    try:
+        df = pd.read_csv(SPREADSHEET_PUBLIC_URL)
+    except HTTPError or URLError as e:
+        logger.error("Error accessing the public spreadsheet: %s", e)
+        return []
     if df.empty:
         logger.error("No data found. Empty SpreadSheet")
         return []
@@ -95,7 +101,6 @@ def parseSpreadsheet(df):
 
 if __name__ == "__main__":
     # creds = googleLogin()
-    # busquedas = readSpreadsheetWithAuth(creds, '1XDb0I4JTaUx66iK_ptiib0OxFochIGq2XP5xNSLLSu4')
     busquedas = readSpreadsheetWithoutAuth("")
     for b in busquedas:
         print(b['MIN_PRICE'])

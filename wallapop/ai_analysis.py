@@ -1,16 +1,17 @@
 import json
 from pydantic import BaseModel, ValidationError
 from datetime import datetime, time
-from typing import Optional
 from openai import OpenAI
+from mistralai import Mistral
 import logging
 import os
 from dotenv import load_dotenv
-from wallapop.wallapop import getUserReviews
 
-# from wallapop import getUserReviews
-# from mockdata import mockdata_multiple, mockdata_simple, mockdata_double
-# mockdata = mockdata_double()
+from ai_models import ModelPlatform, Products, CombinedProduct
+from wallapop import getUserReviews
+
+# from wallapop.ai_models import ModelPlatform, Products, CombinedProduct
+# from wallapop.wallapop import getUserReviews
 
 
 logger = logging.getLogger("wallapop")
@@ -21,56 +22,31 @@ MODEL = os.getenv("AI_MODEL")
 
 if MODEL:
     API_KEY = os.getenv("AI_MODEL_API_KEY")
-    if MODEL == "deepseek-chat":
+    if ModelPlatform(MODEL) == "DeepSeek":
         base_url = "https://api.deepseek.com"
-    elif MODEL == "sonar" or MODEL == "r1-1776" or MODEL == "sonar-pro":
+    elif ModelPlatform(MODEL) == "Perplexity":
         base_url = "https://api.perplexity.ai"
-    elif MODEL == "gemini-2.5-flash" or MODEL == "gemini-2.5-pro":
+    elif ModelPlatform(MODEL) == "Google Gemini":
         base_url = "https://generativelanguage.googleapis.com/v1beta/"
+    elif ModelPlatform(MODEL) == "Mistral":
+        pass
     else:
         logger.error(f"Model {MODEL} not supported. Not using AI.")
         MODEL = None
     try:
-        client = OpenAI(
-            api_key=API_KEY,
-            base_url=base_url
-        )
+        if ModelPlatform(MODEL) == "Mistral":
+            client = Mistral(
+                api_key=API_KEY,
+            )
+        else:
+            client = OpenAI(
+                api_key=API_KEY,
+                base_url=base_url
+            )
     except Exception as e:
-        logger.error(f"Error initializing OpenAI client: {e}")
+        logger.error(f"Error initializing AI client: {e}")
         MODEL = None
-    
 
-class Product(BaseModel):
-    title: str
-    max_price: int
-    analysis: str
-    score: int
-    item_url: str
-
-class Products(BaseModel):
-    products: list[Product]
-
-class CombinedProduct(BaseModel):
-    title: str
-    price: float
-    max_price: Optional[float] = None 
-    analysis: Optional[str] = None
-    description: str
-    location: str
-    date: datetime
-    user_id: str
-    user_reviews: int 
-    score: Optional[int] = None
-    item_url: str
-
-class BaseProduct(BaseModel):
-    title: str
-    price: float
-    item_url: str
-    description: str 
-    location: str 
-    date: datetime
-    user_id: str
 
 
 def analyze_products(products_data, item_name, prompt):
@@ -111,14 +87,24 @@ def analyze_products(products_data, item_name, prompt):
     messages = [{"role": "system", "content": system_content},
                 {"role": "user", "content": user_content}]
 
-    response = client.chat.completions.create(
-        model=MODEL,
-        messages=messages,
-        response_format={
-            'type': 'json_object',
-            "json_schema": {"schema": Products.model_json_schema()}
-        }
-    )
+    if ModelPlatform(MODEL) == "Mistral":
+        response = client.chat.complete(
+            model=MODEL,
+            messages=messages,
+            response_format={
+                'type': 'json_object',
+                "json_schema": {"schema": Products.model_json_schema()}
+            }
+        )
+    else:
+        response = client.chat.completions.create(
+            model=MODEL,
+            messages=messages,
+            response_format={
+                'type': 'json_object',
+                "json_schema": {"schema": Products.model_json_schema()}
+            }
+        )
     parsed_response = parse_response(response)
     full_response = combine_products_with_info(products_data, parsed_response)
 
@@ -178,6 +164,8 @@ def getPrices():
             "output_tokens": 0,
             "request_price": 0
         }
+    # elif MODEL == "mistral-large-2411" or MODEL == "mistral-large-latest":
+
     else:
         pass
 
@@ -264,7 +252,6 @@ if __name__ == "__main__":
     from wallapop import getUserReviews
     from mockdata import mockdata_multiple, mockdata_simple, mockdata_double
     mockdata = mockdata_double()
-    MODEL = 'gemini-2.5-pro'  # or 'sonar', 'r1-1776', etc.
     # MODEL = None  # Uncomment to disable AI analysis
     
     # Uncomment to test the function

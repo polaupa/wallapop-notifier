@@ -14,7 +14,7 @@ from telegram_utils.telegram_utils import send_telegram, get_chat_id, html_parse
 from wallapop.ai_analysis import analyze_products
 
 
-REFRESH_TIME = 600
+REFRESH_TIME = 300
 ENV_PATH = '.env'
 MIN_SCORE = 75
 
@@ -50,7 +50,7 @@ def main():
         set_key(ENV_PATH, "TELEGRAM_CHAT_ID", TELEGRAM_CHAT_ID)
         logger.info("Telegram Chat ID saved in .env file.")
     else:
-        logger.info(f"Using Telegram Chat ID: {TELEGRAM_CHAT_ID}")    
+        logger.debug(f"Using Telegram Chat ID: {TELEGRAM_CHAT_ID}")    
     
     if not SPREADSHEET_ID:
         GCREDS = None
