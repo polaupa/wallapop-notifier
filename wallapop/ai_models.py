@@ -9,7 +9,7 @@ def ModelPlatform(MODEL):
         return "Perplexity"
     elif MODEL in ["gemini-2.5-flash", "gemini-2.5-pro"]:
         return "Gemini"
-    elif MODEL in ["mistral-large-2411", "mistral-large-latest", "mistral-medium-2505", "magistral-medium-2506"]:
+    elif MODEL in ["mistral-large-latest", "mistral-medium-latest", "magistral-medium-latest"]:
         return "Mistral"
     else:
         return None

@@ -83,9 +83,9 @@ def main():
                         if product.score == None and product.user_reviews > 0:
                             html_product = html_parse(product)
                             send_telegram(html_product, TELEGRAM_CHAT_ID)
-                        elif product.user_reviews == 0:
-                            logger.debug(f"Item: {product.title} has no user reviews. Skipping.")
-                        elif product.score > MIN_SCORE and product.user_reviews > 0:
+                        elif product.user_reviews <= params["MIN_REVIEWS"]:
+                            logger.debug(f"Item: {product.title} has {product.user_reviews} reviews. Skipping.")
+                        elif product.score > MIN_SCORE and product.user_reviews >= params["MIN_REVIEWS"]:
                             html_product = html_parse(product)
                             send_telegram(html_product, TELEGRAM_CHAT_ID)
                             logger.info(f"Item: {product.title} is interesting (score: {product.score}, price {product.price}). Telegram message sent.")
@@ -108,8 +108,10 @@ if __name__ == "__main__":
         "LATITUDE": 41.38791, 
         "MIN_PRICE": 0, 
         "MAX_PRICE": 1000, 
+        "MIN_REVIEWS": 90, 
         "DISTANCE": 10,
-        "MODEL": "sonar-pro",
+        "MODEL": "magistral-medium-latest",
+        # "MODEL": "sonar-pro",
         # "MODEL": "deepseek-chat",
         # "MODEL": "gemini-2.5-pro",
         "PROMPT":"-"
