@@ -222,7 +222,7 @@ def getPrices(MODEL):
     elif MODEL == 'sonar-pro':
         pricing={
             "input_tokens": 3 / 1000000,
-            "output_tokens": 115 / 1000000,
+            "output_tokens": 15 / 1000000,
             "request_price": 6 / 1000
         }
     elif MODEL == 'r1-1776':

@@ -101,7 +101,7 @@ def main():
         logger.warning("KeyboardInterrupt detected. Exiting...")
 
 if __name__ == "__main__":
-    MOCK = True
+    MOCK = False
     mock_spreadsheet = [{
         "ITEM": "piano digital", 
         "LONGITUDE": 2.1699187, 
