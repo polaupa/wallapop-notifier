@@ -2,6 +2,7 @@ import requests
 from datetime import datetime
 from urllib.parse import urlencode
 import logging
+import json
 
 logger = logging.getLogger("wallapop")
 
@@ -30,35 +31,40 @@ def getHeaders():
     return headers
 
 
-def search_wallapop(params, REFRESH_TIME=120):
+def search_wallapop(params, REFRESH_TIME=120, MOCK=False):
 
-    query_dict = {
-        "source": "search_box",
-        "keywords": params['ITEM'],
-        "longitude": params['LONGITUDE'],
-        "latitude": params['LATITUDE'],
-        "order_by": "newest",
-        "min_sale_price": params['MIN_PRICE'],
-        "max_sale_price": params['MAX_PRICE'],
-        "distance_in_km": int(params['DISTANCE']) if str(params['DISTANCE']) not in ("", "-", "nan", None) else "-",
-    }
-    query_dict = {k: v for k, v in query_dict.items() if str(v) not in ("", "-", "nan", None)}
+    if MOCK:
+        logger.warning("Using mock data for search_wallapop")
+        with open('wallapop/piano-wallapop.json', 'r') as f:
+            data = json.load(f)
+    else:
+        query_dict = {
+            "source": "search_box",
+            "keywords": params['ITEM'],
+            "longitude": params['LONGITUDE'],
+            "latitude": params['LATITUDE'],
+            "order_by": "newest",
+            "min_sale_price": params['MIN_PRICE'],
+            "max_sale_price": params['MAX_PRICE'],
+            "distance_in_km": int(params['DISTANCE']) if str(params['DISTANCE']) not in ("", "-", "nan", None) else "-",
+        }
+        query_dict = {k: v for k, v in query_dict.items() if str(v) not in ("", "-", "nan", None)}
 
-    base_url = "https://api.wallapop.com/api/v3/search"
-    query_string = urlencode(query_dict)
-    url = f"{base_url}?{query_string}"
-    logger.info(f"Searching for {params['ITEM']} at https://es.wallapop.com/search?{query_string}")
+        base_url = "https://api.wallapop.com/api/v3/search"
+        query_string = urlencode(query_dict)
+        url = f"{base_url}?{query_string}"
+        logger.info(f"Searching for {params['ITEM']} at https://es.wallapop.com/search?{query_string}")
 
-    # logger.info(f'API Endpoint: {url}')
-    
-    headers = getHeaders()
-    response = requests.get(url, headers=headers)
-    try:
-        data = response.json()
-    except Exception as e:
-        logger.error(f"Error parsing JSON response: {e}")
-        logger.error(f"Response content: {response.content}")
-        return []
+        # logger.info(f'API Endpoint: {url}')
+        
+        headers = getHeaders()
+        response = requests.get(url, headers=headers)
+        try:
+            data = response.json()
+        except Exception as e:
+            logger.error(f"Error parsing JSON response: {e}")
+            logger.error(f"Response content: {response.content}")
+            return []
     current_date = datetime.now()
     new_items = []
 
@@ -72,9 +78,14 @@ def search_wallapop(params, REFRESH_TIME=120):
         location = item["location"]["postal_code"] + " " + item["location"]["city"] + " " + item["location"]["region2"]
         date = datetime.fromtimestamp(timestamp / 1000)
         difference = current_date - date
+        images = []
+        for image in item["images"]:
+            images.append(image["urls"]['small'])
 
         # If item is newer than REFRESH_TIME seconds, append it
-        if difference.seconds < REFRESH_TIME:
+        if MOCK:
+            new_items.append({'title': title, 'description': description, 'price': price, 'date': date, 'item_url': item_url, 'location': location, 'user_id': user_id, 'images': images})
+        elif difference.seconds < REFRESH_TIME:
             new_items.append({'title':title, 'description':description, 'price':price, 'date':date, 'item_url':item_url, 'location':location, 'user_id': user_id})
     if new_items:
         logger.info(f"Found {len(new_items)} new items for {params['ITEM']} :)")

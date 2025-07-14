@@ -9,30 +9,39 @@ from dotenv import load_dotenv
 
 # from ai_models import ModelPlatform, Products, CombinedProduct
 # from wallapop import getUserReviews
-
-from wallapop.ai_models import ModelPlatform, Products, CombinedProduct
-from wallapop.wallapop import getUserReviews
-
+try:
+    from wallapop.ai_models import ModelPlatform, Products, CombinedProduct
+    from wallapop.wallapop import getUserReviews
+except ImportError:
+    from ai_models import ModelPlatform, Products, CombinedProduct
+    from wallapop import getUserReviews
 
 logger = logging.getLogger("wallapop")
 
 load_dotenv()
 
-MODEL = os.getenv("AI_MODEL")
+# MODEL = os.getenv("AI_MODEL")
 
-if MODEL:
-    API_KEY = os.getenv("AI_MODEL_API_KEY")
+def getAIClient(MODEL):
     if ModelPlatform(MODEL) == "DeepSeek":
+        API_KEY = os.getenv("DEEPSEEK_API_KEY")
         base_url = "https://api.deepseek.com"
     elif ModelPlatform(MODEL) == "Perplexity":
+        API_KEY = os.getenv("PERPLEXITY_API_KEY")
         base_url = "https://api.perplexity.ai"
-    elif ModelPlatform(MODEL) == "Google Gemini":
+    elif ModelPlatform(MODEL) == "Gemini":
+        API_KEY = os.getenv("GEMINI_API_KEY")
         base_url = "https://generativelanguage.googleapis.com/v1beta/"
     elif ModelPlatform(MODEL) == "Mistral":
-        pass
+        API_KEY = os.getenv("MISTRAL_API_KEY")
     else:
         logger.error(f"Model {MODEL} not supported. Not using AI.")
-        MODEL = None
+        return None
+    
+    if not API_KEY:
+        logger.error(f"{ModelPlatform(MODEL)} API key not found in environment variables. AI analysis disabled.")
+        return None
+    
     try:
         if ModelPlatform(MODEL) == "Mistral":
             client = Mistral(
@@ -45,12 +54,17 @@ if MODEL:
             )
     except Exception as e:
         logger.error(f"Error initializing AI client: {e}")
-        MODEL = None
+        return None
+    return client
 
 
 
-def analyze_products(products_data, item_name, prompt):
-    if MODEL == None:
+
+def analyze_products(products_data, input_data):
+    item_name = input_data['ITEM']
+    prompt = input_data['PROMPT']
+    MODEL = input_data['MODEL']
+    if MODEL == None or MODEL == '' or MODEL == '-':
         logger.warning("No AI model selected.")
         products = [
             CombinedProduct(
@@ -59,6 +73,17 @@ def analyze_products(products_data, item_name, prompt):
             for item in products_data
         ]
         return products
+    
+    client = getAIClient(MODEL)
+    if not client:
+        products = [
+            CombinedProduct(
+                **{**item, 'user_reviews': getUserReviews(item['user_id'])}
+            ) if not isinstance(item, CombinedProduct) else item
+            for item in products_data
+        ]
+        return products
+    
     logger.info(f"Analyzing with {MODEL} ...")
     system_content =  [
         {"type": "text", "text": "Eres un analista de productos de segunda mano. Recibirás datos de uno o varios producto de Wallapop, y tienes que decidir si es una ganga o no. Se muy estricto. La fecha que aparece, es correcta, ahora estamos en tu futuro."},
@@ -96,6 +121,15 @@ def analyze_products(products_data, item_name, prompt):
                 "json_schema": {"schema": Products.model_json_schema()}
             }
         )
+    elif ModelPlatform(MODEL) == "Perplexity":
+        response = client.chat.completions.create(
+            model=MODEL,
+            messages=messages,
+            response_format={
+                'type': 'json_schema',
+                "json_schema": {"schema": Products.model_json_schema()}
+            }
+        )
     else:
         response = client.chat.completions.create(
             model=MODEL,
@@ -106,6 +140,39 @@ def analyze_products(products_data, item_name, prompt):
             }
         )
     parsed_response = parse_response(response)
+    if not parsed_response:
+        for i in range(2):
+            logger.warning(f"LLM Response validation error, retrying {i+2}/3")
+            if ModelPlatform(MODEL) == "Mistral":
+                response = client.chat.complete(
+                    model=MODEL,
+                    messages=messages,
+                    response_format={
+                        'type': 'json_object',
+                        "json_schema": {"schema": Products.model_json_schema()}
+                    }
+                )
+            else:
+                response = client.chat.completions.create(
+                    model=MODEL,
+                    messages=messages,
+                    response_format={
+                        'type': 'json_object',
+                        "json_schema": {"schema": Products.model_json_schema()}
+                    }
+                )
+            parsed_response = parse_response(response)
+            if parsed_response:
+                break
+        logger.error("Failed to parse LLM response after 3 attempts. Returning without analysis.")
+        products = [
+            CombinedProduct(
+                **{**item, 'user_reviews': getUserReviews(item['user_id'])}
+            ) if not isinstance(item, CombinedProduct) else item
+            for item in products_data
+        ]
+        return products
+    
     full_response = combine_products_with_info(products_data, parsed_response)
 
     if response.choices[0].finish_reason == 'length':
@@ -118,7 +185,7 @@ def analyze_products(products_data, item_name, prompt):
         return []
     
 
-    cost = getTotalPrice(response.usage)
+    cost = getTotalPrice(MODEL, response.usage)
 
     if cost != -1:
         logger.info(f"Price of this call: ${cost}")
@@ -132,7 +199,7 @@ def happyHour():
     happyhourend = time(0, 30)    
     return happyhourstart <= currenttime <= happyhourend
 
-def getPrices():
+def getPrices(MODEL):
     if ModelPlatform(MODEL) == "DeepSeek":
         if happyHour():
             pricing = {
@@ -152,13 +219,19 @@ def getPrices():
             "output_tokens": 1 / 1000000,
             "request_price": 5 / 1000
         }
+    elif MODEL == 'sonar-pro':
+        pricing={
+            "input_tokens": 3 / 1000000,
+            "output_tokens": 115 / 1000000,
+            "request_price": 6 / 1000
+        }
     elif MODEL == 'r1-1776':
         pricing = {
             "input_tokens": 2 / 1000000,
             "output_tokens": 8 / 1000000,
             "request_price": 0
         }
-    elif ModelPlatform(MODEL) == "Google Gemini" or ModelPlatform(MODEL) == "Mistral":
+    elif ModelPlatform(MODEL) == "Gemini" or ModelPlatform(MODEL) == "Mistral":
         pricing = {
             "input_tokens": 0,
             "output_tokens": 0,
@@ -171,7 +244,7 @@ def getPrices():
 
     return pricing
 
-def getTotalPrice(usage):
+def getTotalPrice(MODEL, usage):
     if ModelPlatform(MODEL) == "DeepSeek":
         tokens = {
             "input_cache_hit_tokens": usage.prompt_cache_hit_tokens, 
@@ -184,7 +257,7 @@ def getTotalPrice(usage):
             "output_tokens": usage.completion_tokens,
             "request_price": 1
         }
-    elif ModelPlatform(MODEL) == "Google Gemini" or ModelPlatform(MODEL) == "Mistral":
+    elif ModelPlatform(MODEL) == "Gemini" or ModelPlatform(MODEL) == "Mistral":
         tokens = {
             "input_tokens": usage.prompt_tokens,
             "output_tokens": usage.completion_tokens,
@@ -195,7 +268,7 @@ def getTotalPrice(usage):
         return -1
     
     total_price = 0
-    pricing = getPrices()
+    pricing = getPrices(MODEL)
     for key, value in tokens.items():
         if key in pricing:
             total_price += value * pricing[key]
@@ -230,20 +303,8 @@ def parse_response(response):
     except ValidationError as e:
         print(output)
         logger.error(f"LLM Response validation error: {e}")
-    
-    ## Aqué està posant un missatge que no està ben estructurat, de vegades falla i altres no.
-    # for product in output['products']:
-    #     print(f"Product: {product['title']}")
-    #     print(f"Max Price: {product['max_price']}")
-    #     print(f"Description: {product.get('description', 'No description provided')}")
-    #     print(f"Location: {product.get('location', 'No location provided')}")
-    #     print(f"Date: {product.get('date', 'No date provided')}")
-    #     print(f"User ID: {product.get('user_id', 'No user ID provided')}")
-    #     print(f"User Rating: {product.get('user_reviews', 'No user rating provided')}")
-    #     print(f"Análisis: {product['analysis']}")
-    #     print(f"Score: {product['score']}\n")
-    #     print(f"Item URL: {product['item_url']}")
-    # output = json.loads(response.choices[0].message.content)
+        return None
+
     parsed_response = output['products']
     return parsed_response
 
@@ -252,7 +313,12 @@ if __name__ == "__main__":
     from wallapop import getUserReviews
     from mockdata import mockdata_multiple, mockdata_simple, mockdata_double
     mockdata = mockdata_double()
-    # MODEL = None  # Uncomment to disable AI analysis
     
+    # MODEL = None  # Uncomment to disable AI analysis
+    input_data = {
+        'ITEM': 'iPhone 14 Pro',
+        'PROMPT': 'Quiero comprarme un iPhone 14 Pro, pero no quiero pagar más de 800 euros. ¿Qué me recomiendas?',
+        'MODEL': "magistral-medium-2506"
+    }
     # Uncomment to test the function
-    print(analyze_products(mockdata, '-', '-'))
+    print(analyze_products(mockdata, '-'))

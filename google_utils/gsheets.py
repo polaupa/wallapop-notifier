@@ -88,6 +88,7 @@ def readSpreadsheetWithoutAuth(SPREADSHEET_PUBLIC_URL):
     if df.empty:
         logger.error("No data found. Empty SpreadSheet")
         return []
+    a = parseSpreadsheet(df)
     return parseSpreadsheet(df)
 
 

@@ -5,10 +5,10 @@ from datetime import datetime, time
 def ModelPlatform(MODEL):
     if MODEL == "deepseek-chat":
         return "DeepSeek"
-    elif MODEL in ["sonar", "r1-1776"]:
+    elif MODEL in ["sonar", "r1-1776", "sonar-pro"]:
         return "Perplexity"
     elif MODEL in ["gemini-2.5-flash", "gemini-2.5-pro"]:
-        return "Google Gemini"
+        return "Gemini"
     elif MODEL in ["mistral-large-2411", "mistral-large-latest", "mistral-medium-2505", "magistral-medium-2506"]:
         return "Mistral"
     else:

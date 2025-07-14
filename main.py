@@ -64,7 +64,9 @@ def main():
     try:
         while True:
             try:
-                if GCREDS:
+                if MOCK:
+                    spreadsheet = mock_spreadsheet
+                elif GCREDS:
                     spreadsheet = gsheets.readSpreadsheetWithAuth(GCREDS, SPREADSHEET_ID)
                 else:
                     spreadsheet = gsheets.readSpreadsheetWithoutAuth(SPREADSHEET_PUBLIC_URL_CSV)
@@ -73,10 +75,10 @@ def main():
                 GCREDS = gsheets.googleLogin()
 
             for params in spreadsheet:
-                new_items = search_wallapop(params, REFRESH_TIME)
+                new_items = search_wallapop(params, REFRESH_TIME, MOCK)
                 time.sleep(random.uniform(1, 3))
                 if new_items:
-                    products = analyze_products(new_items, params['ITEM'], params['PROMPT'])
+                    products = analyze_products(new_items, params)
                     for product in products:
                         if product.score == None and product.user_reviews > 0:
                             html_product = html_parse(product)
@@ -97,5 +99,19 @@ def main():
             time.sleep(REFRESH_TIME)
     except KeyboardInterrupt:
         logger.warning("KeyboardInterrupt detected. Exiting...")
+
 if __name__ == "__main__":
+    MOCK = True
+    mock_spreadsheet = [{
+        "ITEM": "piano digital", 
+        "LONGITUDE": 2.1699187, 
+        "LATITUDE": 41.38791, 
+        "MIN_PRICE": 0, 
+        "MAX_PRICE": 1000, 
+        "DISTANCE": 10,
+        "MODEL": "sonar-pro",
+        # "MODEL": "deepseek-chat",
+        # "MODEL": "gemini-2.5-pro",
+        "PROMPT":"-"
+    }]
     main()
