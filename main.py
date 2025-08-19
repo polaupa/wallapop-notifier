@@ -84,18 +84,18 @@ def main():
                             html_product = html_parse(product)
                             send_telegram(html_product, TELEGRAM_CHAT_ID)
                         elif product.user_reviews <= params["MIN_REVIEWS"]:
-                            logger.debug(f"Item: {product.title} has {product.user_reviews} reviews. Skipping.")
+                            logger.info(f"Item: {product.title} has {product.user_reviews} reviews. Skipping.")
                         elif product.score > MIN_SCORE and product.user_reviews >= params["MIN_REVIEWS"]:
                             html_product = html_parse(product)
                             send_telegram(html_product, TELEGRAM_CHAT_ID)
                             logger.info(f"Item: {product.title} is interesting (score: {product.score}, price {product.price}). Telegram message sent.")
                             logger.debug(product.analysis)
                         else:
-                            logger.debug(f"Item: {product.title} is not interesting enough (score: {product.score}, price {product.price}). Skipping.")
+                            logger.info(f"Item: {product.title} is not interesting enough (score: {product.score}, price {product.price}). Skipping.")
                             logger.debug(product.analysis)
-                else:
-                    logger.info(f"No new items found for {params['ITEM']}.")
-            logger.info(f"Sleeping {round(REFRESH_TIME/60,2)} minutes until next check.")
+                # else:
+                #     logger.debug(f"No new items found for {params['ITEM']}.")
+            # logger.debug(f"Sleeping {round(REFRESH_TIME/60,2)} minutes until next check.")
             time.sleep(REFRESH_TIME)
     except KeyboardInterrupt:
         logger.warning("KeyboardInterrupt detected. Exiting...")
@@ -110,10 +110,10 @@ if __name__ == "__main__":
         "MAX_PRICE": 1000, 
         "MIN_REVIEWS": 90, 
         "DISTANCE": 10,
-        "MODEL": "magistral-medium-latest",
+        # "MODEL": "magistral-medium-latest",
         # "MODEL": "sonar-pro",
         # "MODEL": "deepseek-chat",
-        # "MODEL": "gemini-2.5-pro",
+        "MODEL": "gemini-2.5-pro",
         "PROMPT":"-"
     }]
     main()

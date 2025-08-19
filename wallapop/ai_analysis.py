@@ -57,9 +57,6 @@ def getAIClient(MODEL):
         return None
     return client
 
-
-
-
 def analyze_products(products_data, input_data):
     item_name = input_data['ITEM']
     prompt = input_data['PROMPT']
@@ -112,58 +109,17 @@ def analyze_products(products_data, input_data):
     messages = [{"role": "system", "content": system_content},
                 {"role": "user", "content": user_content}]
 
-    if ModelPlatform(MODEL) == "Mistral":
-        response = client.chat.complete(
-            model=MODEL,
-            messages=messages,
-            response_format={
-                'type': 'json_object',
-                "json_schema": {"schema": Products.model_json_schema()}
-            }
-        )
-    elif ModelPlatform(MODEL) == "Perplexity":
-        response = client.chat.completions.create(
-            model=MODEL,
-            messages=messages,
-            response_format={
-                'type': 'json_schema',
-                "json_schema": {"schema": Products.model_json_schema()}
-            }
-        )
-    else:
-        response = client.chat.completions.create(
-            model=MODEL,
-            messages=messages,
-            response_format={
-                'type': 'json_object',
-                "json_schema": {"schema": Products.model_json_schema()}
-            }
-        )
+
+    response = getCompletion(MODEL, messages)
     parsed_response = parse_response(response)
     if not parsed_response:
         for i in range(2):
             logger.warning(f"LLM Response validation error, retrying {i+2}/3")
-            if ModelPlatform(MODEL) == "Mistral":
-                response = client.chat.complete(
-                    model=MODEL,
-                    messages=messages,
-                    response_format={
-                        'type': 'json_object',
-                        "json_schema": {"schema": Products.model_json_schema()}
-                    }
-                )
-            else:
-                response = client.chat.completions.create(
-                    model=MODEL,
-                    messages=messages,
-                    response_format={
-                        'type': 'json_object',
-                        "json_schema": {"schema": Products.model_json_schema()}
-                    }
-                )
+            response = getCompletion(MODEL, messages)
             parsed_response = parse_response(response)
             if parsed_response:
                 break
+    if not parsed_response:
         logger.error("Failed to parse LLM response after 3 attempts. Returning without analysis.")
         products = [
             CombinedProduct(
@@ -192,7 +148,51 @@ def analyze_products(products_data, input_data):
 
     return full_response
 
-        
+def getCompletion(MODEL, messages):
+    client = getAIClient(MODEL)
+    if not client:
+        return None
+    
+    if ModelPlatform(MODEL) == "Mistral":
+        response = client.chat.complete(
+            model=MODEL,
+            messages=messages,
+            response_format=responseFormat(MODEL)
+        )
+    elif ModelPlatform(MODEL) == "Gemini":
+        response = client.beta.chat.completions.parse(
+            model=MODEL,
+            messages=messages,
+            response_format=responseFormat(MODEL)
+        )
+    else:
+        response = client.chat.completions.create(
+            model=MODEL,
+            messages=messages,
+            response_format=responseFormat(MODEL)
+        )
+    
+    return response
+
+def responseFormat(MODEL):
+    if ModelPlatform(MODEL) == "DeepSeek":
+        return {
+            'type': 'json_object',
+            "json_schema": {"schema": Products.model_json_schema()}
+        }
+    elif ModelPlatform(MODEL) == "Perplexity":
+        return {
+            'type': 'json_schema',
+            "json_schema": {"schema": Products.model_json_schema()}
+        }
+    elif ModelPlatform(MODEL) == "Gemini":
+        return Products
+    else:
+        return {
+            'type': 'json_object',
+            "json_schema": {"schema": Products.model_json_schema()}
+        }
+
 def happyHour():
     currenttime = datetime.now().time()
     happyhourstart = time(16, 30)  
