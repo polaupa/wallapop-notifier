@@ -2,7 +2,7 @@ import json
 from pydantic import BaseModel, ValidationError
 from datetime import datetime, time
 from openai import OpenAI
-from mistralai import Mistral
+from mistralai import Mistral, SDKError
 import logging
 import os
 from dotenv import load_dotenv
@@ -57,29 +57,25 @@ def getAIClient(MODEL):
         return None
     return client
 
+def productsWithoutAI(products_data):
+    products = [
+        CombinedProduct(
+            **{**item, 'user_reviews': getUserReviews(item['user_id'])}
+        ) if not isinstance(item, CombinedProduct) else item
+        for item in products_data
+    ]
+    return products
+
 def analyze_products(products_data, input_data):
     item_name = input_data['ITEM']
     prompt = input_data['PROMPT']
     MODEL = input_data['MODEL']
     if MODEL == None or MODEL == '' or MODEL == '-':
         logger.warning("No AI model selected.")
-        products = [
-            CombinedProduct(
-                **{**item, 'user_reviews': getUserReviews(item['user_id'])}
-            ) if not isinstance(item, CombinedProduct) else item
-            for item in products_data
-        ]
-        return products
-    
+        return productsWithoutAI(products_data)
     client = getAIClient(MODEL)
     if not client:
-        products = [
-            CombinedProduct(
-                **{**item, 'user_reviews': getUserReviews(item['user_id'])}
-            ) if not isinstance(item, CombinedProduct) else item
-            for item in products_data
-        ]
-        return products
+        return productsWithoutAI(products_data)
     
     logger.info(f"Analyzing with {MODEL} ...")
     system_content =  [
@@ -111,6 +107,8 @@ def analyze_products(products_data, input_data):
 
 
     response = getCompletion(MODEL, messages)
+    if not response:
+        return productsWithoutAI(products_data)
     parsed_response = parse_response(response)
     if not parsed_response:
         for i in range(2):
@@ -121,14 +119,7 @@ def analyze_products(products_data, input_data):
                 break
     if not parsed_response:
         logger.error("Failed to parse LLM response after 3 attempts. Returning without analysis.")
-        products = [
-            CombinedProduct(
-                **{**item, 'user_reviews': getUserReviews(item['user_id'])}
-            ) if not isinstance(item, CombinedProduct) else item
-            for item in products_data
-        ]
-        return products
-    
+        return productsWithoutAI(products_data)
     full_response = combine_products_with_info(products_data, parsed_response)
 
     if response.choices[0].finish_reason == 'length':
@@ -154,11 +145,18 @@ def getCompletion(MODEL, messages):
         return None
     
     if ModelPlatform(MODEL) == "Mistral":
-        response = client.chat.complete(
-            model=MODEL,
-            messages=messages,
-            response_format=responseFormat(MODEL)
-        )
+        try:
+            response = client.chat.complete(
+                model=MODEL,
+                messages=messages,
+                response_format=responseFormat(MODEL)
+            )
+        except SDKError as e:
+            logger.error(f"SDK Error: {e}")
+            logger.warning("Returning without AI Analysis")
+            return None
+
+
     elif ModelPlatform(MODEL) == "Gemini":
         response = client.beta.chat.completions.parse(
             model=MODEL,
@@ -278,8 +276,6 @@ def getTotalPrice(MODEL, usage):
     
     return round(total_price, 6)
 
-
-
 def combine_products_with_info(products, additional_info):
     # Crear un dict para acceso rápido por item_url
     add_info_dict = {item['item_url']: item for item in additional_info}
@@ -294,7 +290,6 @@ def combine_products_with_info(products, additional_info):
             combined_product = CombinedProduct(**combined_data)
             combined_products.append(combined_product)
     return combined_products
-
 
 def parse_response(response):
     output = json.loads(response.choices[0].message.content)

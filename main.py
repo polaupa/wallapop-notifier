@@ -83,9 +83,9 @@ def main():
                         if product.score == None and product.user_reviews > 0:
                             html_product = html_parse(product)
                             send_telegram(html_product, TELEGRAM_CHAT_ID)
-                        elif product.user_reviews <= params["MIN_REVIEWS"]:
+                        elif int(product.user_reviews) <= int(params["MIN_REVIEWS"]):
                             logger.info(f"Item: {product.title} has {product.user_reviews} reviews. Skipping.")
-                        elif product.score > MIN_SCORE and product.user_reviews >= params["MIN_REVIEWS"]:
+                        elif int(product.score) > int(MIN_SCORE) and int(product.user_reviews) >= int(params["MIN_REVIEWS"]):
                             html_product = html_parse(product)
                             send_telegram(html_product, TELEGRAM_CHAT_ID)
                             logger.info(f"Item: {product.title} is interesting (score: {product.score}, price {product.price}). Telegram message sent.")
