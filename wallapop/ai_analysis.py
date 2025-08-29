@@ -1,7 +1,7 @@
 import json
 from pydantic import BaseModel, ValidationError
 from datetime import datetime, time
-from openai import OpenAI
+from openai import OpenAI, RateLimitError
 from mistralai import Mistral, SDKError
 import logging
 import os
@@ -60,7 +60,7 @@ def getAIClient(MODEL):
 def productsWithoutAI(products_data):
     products = [
         CombinedProduct(
-            **{**item, 'user_reviews': getUserReviews(item['user_id'])}
+            **{**item, 'analysis': item['description'], 'user_reviews': getUserReviews(item['user_id'])}
         ) if not isinstance(item, CombinedProduct) else item
         for item in products_data
     ]
@@ -158,11 +158,16 @@ def getCompletion(MODEL, messages):
 
 
     elif ModelPlatform(MODEL) == "Gemini":
-        response = client.beta.chat.completions.parse(
-            model=MODEL,
-            messages=messages,
-            response_format=responseFormat(MODEL)
-        )
+        try:
+            response = client.beta.chat.completions.parse(
+                model=MODEL,
+                messages=messages,
+                response_format=responseFormat(MODEL)
+            )
+        except RateLimitError as e:
+            logger.error(f"Rate Limit Error: {e}")
+            logger.warning("Returning without AI Analysis")
+            return None
     else:
         response = client.chat.completions.create(
             model=MODEL,
@@ -292,7 +297,12 @@ def combine_products_with_info(products, additional_info):
     return combined_products
 
 def parse_response(response):
-    output = json.loads(response.choices[0].message.content)
+    try:
+        output = json.loads(response.choices[0].message.content)
+    except TypeError as e:
+        logger.error(f"Error parsing LLM response: {e}")
+        logger.error(f"Response content: {response.choices[0].message.content}")
+        return None
     try:
         Products.model_validate(output)
     except ValidationError as e:

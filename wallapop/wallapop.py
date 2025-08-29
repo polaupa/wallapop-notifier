@@ -32,7 +32,7 @@ def getHeaders():
 
 
 def search_wallapop(params, REFRESH_TIME=120, MOCK=False):
-
+    REFRESH_TIME = REFRESH_TIME + 5
     if MOCK:
         logger.warning("Using mock data for search_wallapop")
         with open('wallapop/piano-wallapop.json', 'r') as f:
