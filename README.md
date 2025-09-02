@@ -10,6 +10,8 @@ A Telegram bot that monitors Wallapop searches and notifies you of interesting n
 - **AI Analysis:** Uses LLMs to analyze and score products.
 - **Google Sheets Integration:** Configure your searches in a spreadsheet.
 - **Telegram Notifications:** Sends you alerts for interesting items.
+- **Database Storage:** Keeps track of notified items to avoid duplicates.
+- **Docker Support:** Easy deployment with Docker.
 
 ---
 
@@ -33,29 +35,29 @@ cp .env.example .env
 Edit `.env` and set:
 
 - `TELEGRAM_TOKEN` — Your Telegram bot token ([how to get one](https://core.telegram.org/bots/tutorial))
-- `SPREADSHEET_ID` — Your Google Sheets spreadsheet ID (It is the ID in the link of the docs.google.com/spreadsheets/d/**SPREADSHEET_ID**/edit?gid=0#gid=0)
+- `SPREADSHEET_ID` (either this, or public URL)— Your Google Sheets spreadsheet ID (It is the ID in the link of the docs.google.com/spreadsheets/d/**SPREADSHEET_ID**/edit?gid=0#gid=0)
 - `SPREADSHEET_PUBLIC_URL_CSV` (You have to make your spreadsheet public or to set up Google Sheets - Step 3) - Your CSV public URL ([how to get one](https://support.google.com/docs/answer/183965?hl=en&co=GENIE.Platform%3DDesktop))
-- `AI_MODEL_API_KEY` — (Optional) API key for your AI model
-- `AI_MODEL` — (Optional) Model name. At this moment accepts:
-    - `deepseek-chat`: https://platform.deepseek.com/api_keys
-    - `sonar`, `r1-1776`: https://www.perplexity.ai/account/api/keys
-    - `mistral-large-2411`, `mistral-large-latest`, `mistral-medium-2505`, `magistral-medium-2506`
-    - `gemini-2.5-pro`: https://aistudio.google.com/apikey -> This is free!
+- `DEEPSEEK_API_KEY` (Optional): https://platform.deepseek.com/api_keys
+- `MISTRAL_API_KEY` (Optional - Free): https://console.mistral.ai/api-keys
+- `GEMINI_API_KEY` (Optional - Free): https://aistudio.google.com/apikey
+- `PERPLEXITY_API_KEY` (Optional): https://www.perplexity.ai/account/api/keys
 
-- \* Note that if you don't set AI, you won't have access to AI features, and you will only retrieve the Wallapop data - which works fine. 
+
+\* Note that if you don't set AI, you won't have access to AI features, and you will only retrieve the Wallapop data - which works fine. 
 
 ### 3. Set Up Google Sheets
 
+Create a Google Sheet following [this template](docs.google.com/spreadsheets/d/1vm6eRdxIq2JPVT1KsuNuspUZM1Ey6C78hI5mABtE-9s) (import it to your Google Drive).
+
+Option 1: Use Public URL (simpler, less secure)
+- Make your Google Sheet public ([Google Instructions](https://support.google.com/docs/answer/183965?hl=en&co=GENIE.Platform%3DDesktop))
+- Set the `SPREADSHEET_PUBLIC_URL_CSV` in `.env`
+
+Option 2: Use Google API (more secure, more complex)
 - Share your spreadsheet with your Google API service account ([Google Instructions](https://developers.google.com/workspace/guides/create-credentials?hl=es-419))
 - Set the `credentials.json` in `google_utils/credentials.json` 
-- The spreadsheet should have this format:
+- Set the `SPREADSHEET_ID` in `.env`
 
-| MIN_PRICE | MAX_PRICE | ITEM      | LONGITUDE | LATITUDE | DISTANCE | PROMPT |
-|-----------|-----------|-----------|-----------|----------|----------|--------|
-| -         | -         | item_name | -         | -        | -        | -      |
-- The only mandatory item is `ITEM`.
-- If you don't want to configure `MIN_PRICE`, `MAX_PRICE`, `LONGITUDE`, `LATITUDE`, `DISTANCE`, `PROMPT`: Just put a  `-`
-LO
 ### 4. Run the bot
 
 #### Locally
@@ -71,6 +73,8 @@ python main.py
 docker-compose up --build -d
 ```
 
+To get Telegram notifications, make sure your bot is running and you have sent the `/start` command to it.
+
 ---
 
 ## Usage
@@ -83,11 +87,10 @@ docker-compose up --build -d
 
 ## Stopping the Bot
 
-If running with Docker:
+If running with Docker. In the folder where `docker-compose.yaml` is located, run:
 
 ```bash
-docker kill wallapop-wallapop-1
-docker rm wallapop-wallapop-1
+docker compose down
 ```
 
 ---
@@ -103,7 +106,7 @@ docker rm wallapop-wallapop-1
 ├── requirements.txt
 ├── docker-compose.yaml
 ├── Dockerfile
-└── .env.example
+└── .env
 ```
 
 ---
