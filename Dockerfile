@@ -1,6 +1,12 @@
-FROM python:alpine
+FROM python:slim
 
 WORKDIR /app
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        gcc \
+        libmariadb-dev \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY . .
 

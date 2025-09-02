@@ -60,7 +60,7 @@ def getAIClient(MODEL):
 def productsWithoutAI(products_data):
     products = [
         CombinedProduct(
-            **{**item, 'analysis': item['description'], 'user_reviews': getUserReviews(item['user_id'])}
+            **{**item, 'analysis': item['description']}
         ) if not isinstance(item, CombinedProduct) else item
         for item in products_data
     ]
@@ -291,7 +291,7 @@ def combine_products_with_info(products, additional_info):
         info = add_info_dict.get(item_url)
         if info:
             # Unimos los campos, priorizando los del product si hay conflicto
-            combined_data = {**info, **product, 'user_reviews': getUserReviews(product['user_id'])}
+            combined_data = {**info, **product}
             combined_product = CombinedProduct(**combined_data)
             combined_products.append(combined_product)
     return combined_products

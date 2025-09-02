@@ -7,6 +7,24 @@ services:
       dockerfile: Dockerfile
     env_file:
       - .env
+    environment:
+      - DATABASE_HOST=db
     volumes:
       - .:/app
     restart: unless-stopped
+  db:
+    image: mariadb:latest
+    container_name: wallapop-db
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: wallapop
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+    volumes:
+      - db_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    restart: unless-stopped
+volumes:
+  db_data:
+    name: wallapop-db-data

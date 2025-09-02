@@ -40,7 +40,7 @@ logger.setLevel(logging.DEBUG)
 
 
 def main():
-
+    time.sleep(3)
     load_dotenv(ENV_PATH)
     TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
     SPREADSHEET_ID = os.getenv("SPREADSHEET_ID")

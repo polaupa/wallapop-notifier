@@ -3,6 +3,7 @@ from datetime import datetime
 from urllib.parse import urlencode
 import logging
 import json
+from wallapop.db import insert_items
 
 logger = logging.getLogger("wallapop")
 
@@ -78,18 +79,20 @@ def search_wallapop(params, REFRESH_TIME=120, MOCK=False):
         location = item["location"]["postal_code"] + " " + item["location"]["city"] + " " + item["location"]["region2"]
         date = datetime.fromtimestamp(timestamp / 1000)
         difference = current_date - date
+        user_reviews = getUserReviews(user_id)
         images = []
         for image in item["images"]:
             images.append(image["urls"]['small'])
 
         # If item is newer than REFRESH_TIME seconds, append it
         if MOCK:
-            new_items.append({'title': title, 'description': description, 'price': price, 'date': date, 'item_url': item_url, 'location': location, 'user_id': user_id, 'images': images})
-        elif difference.seconds < REFRESH_TIME:
-            new_items.append({'title':title, 'description':description, 'price':price, 'date':date, 'item_url':item_url, 'location':location, 'user_id': user_id})
+            new_items.append({'title': title, 'description': description, 'price': price, 'date': date, 'item_url': item_url, 'location': location, 'user_id': user_id, 'images': images, 'user_reviews': user_reviews})
+        elif difference.seconds < REFRESH_TIME + 120:
+            new_items.append({'title':title, 'description':description, 'price':price, 'date':date, 'item_url':item_url, 'location':location, 'user_id': user_id, 'user_reviews': user_reviews})
     if new_items:
         logger.info(f"Found {len(new_items)} new items for {params['ITEM']} :)")
-    
+        new_items = insert_items(tablename = params['ITEM'], items = new_items)
+
     return new_items
 
 def getUserReviews(user_id):
