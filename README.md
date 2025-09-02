@@ -35,8 +35,8 @@ cp .env.example .env
 Edit `.env` and set:
 
 - `TELEGRAM_TOKEN` — Your Telegram bot token ([how to get one](https://core.telegram.org/bots/tutorial))
-- `SPREADSHEET_ID` (either this, or public URL)— Your Google Sheets spreadsheet ID (It is the ID in the link of the docs.google.com/spreadsheets/d/**SPREADSHEET_ID**/edit?gid=0#gid=0)
-- `SPREADSHEET_PUBLIC_URL_CSV` (You have to make your spreadsheet public or to set up Google Sheets - Step 3) - Your CSV public URL ([how to get one](https://support.google.com/docs/answer/183965?hl=en&co=GENIE.Platform%3DDesktop))
+- `SPREADSHEET_ID` (Check Step 3)
+- `SPREADSHEET_PUBLIC_URL_CSV` (Check Step 3)
 - `DEEPSEEK_API_KEY` (Optional): https://platform.deepseek.com/api_keys
 - `MISTRAL_API_KEY` (Optional - Free): https://console.mistral.ai/api-keys
 - `GEMINI_API_KEY` (Optional - Free): https://aistudio.google.com/apikey
@@ -49,14 +49,16 @@ Edit `.env` and set:
 
 Create a Google Sheet following [this template](docs.google.com/spreadsheets/d/1vm6eRdxIq2JPVT1KsuNuspUZM1Ey6C78hI5mABtE-9s) (import it to your Google Drive).
 
+You only have to do one of the following two options:
+
 Option 1: Use Public URL (simpler, less secure)
 - Make your Google Sheet public ([Google Instructions](https://support.google.com/docs/answer/183965?hl=en&co=GENIE.Platform%3DDesktop))
-- Set the `SPREADSHEET_PUBLIC_URL_CSV` in `.env`
+- Set the `SPREADSHEET_PUBLIC_URL_CSV` with the PUBLIC URL in `.env`
 
 Option 2: Use Google API (more secure, more complex)
 - Share your spreadsheet with your Google API service account ([Google Instructions](https://developers.google.com/workspace/guides/create-credentials?hl=es-419))
 - Set the `credentials.json` in `google_utils/credentials.json` 
-- Set the `SPREADSHEET_ID` in `.env`
+- Set the `SPREADSHEET_ID` in `.env` with your Google Sheets spreadsheet ID (it is the ID in the link of the docs.google.com/spreadsheets/d/**SPREADSHEET_ID**/edit?gid=0#gid=0)
 
 ### 4. Run the bot
 
@@ -70,7 +72,7 @@ python main.py
 #### With Docker:
 
 ```bash
-docker-compose up --build -d
+docker compose up --build -d
 ```
 
 To get Telegram notifications, make sure your bot is running and you have sent the `/start` command to it.
