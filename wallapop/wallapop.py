@@ -105,7 +105,18 @@ def getUserReviews(user_id):
 
     headers = getHeaders()
     response = requests.get(url, headers=headers)
-    data = response.json()
-
-    return data["ratings"][0]["value"]
+    try:
+        data = response.json()
+    except requests.exceptions.JSONDecodeError as e:
+        logger.error(f"Error parsing JSON response for user {user_id}: {e}")
+        logger.error(f"Response content: {response.content}")
+        return -1
+    try:
+        ratings = data["ratings"][0]["value"]
+    except (KeyError, IndexError) as e:
+        logger.error(f"Error extracting ratings for user {user_id}: {e}")
+        logger.error(f"Response data: {data}")
+        ratings = -1
+    
+    return ratings
 

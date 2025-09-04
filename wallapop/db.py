@@ -39,7 +39,7 @@ def create_product_class(tablename):
         'title': Column(String(255)),
         'price': Column(Float),
         'item_url': Column(String(255), primary_key=True),
-        'description': Column(String(1024)), 
+        'description': Column(String(2048)), 
         'location': Column(String(255)), 
         'date': Column(DateTime),
         'user_id': Column(String(32)),
