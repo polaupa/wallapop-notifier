@@ -3,6 +3,7 @@ from datetime import datetime
 from urllib.parse import urlencode
 import logging
 import json
+from time import sleep
 from wallapop.db import insert_items
 
 logger = logging.getLogger("wallapop")
@@ -116,7 +117,8 @@ def getUserReviews(user_id):
     except (KeyError, IndexError) as e:
         logger.error(f"Error extracting ratings for user {user_id}: {e}")
         logger.error(f"Response data: {data}")
-        ratings = -1
+        return 80
+
     
     return ratings
 

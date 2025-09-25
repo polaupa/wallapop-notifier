@@ -32,6 +32,10 @@ Base = declarative_base()
 #     user_reviews = Column(Integer)
 
 def create_product_class(tablename):
+    if hasattr(Base, 'registry') and tablename in Base.registry._class_registry:
+        # Devolver la clase existente
+        return Base.registry._class_registry[tablename]
+    
     ProductClass = type(tablename, (Base,), {
         '__tablename__': tablename,
         '__table_args__': {'extend_existing': True},
@@ -100,7 +104,7 @@ def insert_items(tablename, items):
             logger.debug(f"Inserted new Item: {item['title']}")
         else:
             if new_item_in_db.price != item['price']:
-                new_item_in_db.price == item['price']
+                new_item_in_db.price = item['price']
                 logger.info(f"Item with title '{item['title']}' has changed its price from {new_item_in_db.price} to {item['price']}.")
 
             else:

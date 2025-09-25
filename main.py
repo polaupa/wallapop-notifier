@@ -15,7 +15,7 @@ from telegram_utils.telegram_utils import send_telegram, get_chat_id, html_parse
 from wallapop.ai_analysis import analyze_products
 
 
-REFRESH_TIME = 120
+REFRESH_TIME = 30
 ENV_PATH = '.env'
 MIN_SCORE = 75
 
