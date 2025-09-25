@@ -25,6 +25,16 @@ services:
     ports:
       - "3306:3306"
     restart: unless-stopped
+  chatbot-telegram:
+    container_name: chatbot-telegram
+    build:
+      context: ./telegram_chatbot
+      dockerfile: Dockerfile
+    env_file:
+      - .env    
+    volumes:
+      - ./telegram_chatbot:/app
+    restart: always
 volumes:
   db_data:
     name: wallapop-db-data
