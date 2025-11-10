@@ -75,6 +75,8 @@ def main():
                 GCREDS = gsheets.googleLogin()
 
             for params in spreadsheet:
+                if params["MIN_REVIEWS"] == "" or params["MIN_REVIEWS"] == "-":
+                    params["MIN_REVIEWS"] = 0
                 new_items = search_wallapop(params, REFRESH_TIME, MOCK)
                 time.sleep(random.uniform(1, 3))
                 if new_items:

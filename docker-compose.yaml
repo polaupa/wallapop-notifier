@@ -11,6 +11,10 @@ services:
       - DATABASE_HOST=db
     volumes:
       - .:/app
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    networks:
+      - db
     restart: unless-stopped
   db:
     image: mariadb:latest
@@ -22,8 +26,11 @@ services:
       MYSQL_PASSWORD: password
     volumes:
       - db_data:/var/lib/mysql
-    ports:
-      - "3306:3306"
+    # ports: # Only enable if we need to access this data outside the docker network
+    #   - "3306:3306" # Only enable if we need to access this data outside the docker network
+    networks:
+      - db
+      - dbgate_network
     restart: unless-stopped
   chatbot-telegram:
     container_name: chatbot-telegram
@@ -38,3 +45,7 @@ services:
 volumes:
   db_data:
     name: wallapop-db-data
+networks:
+  db:
+  dbgate_network:
+    external: true # Use existing dbgate_network created for jobseek -> Remove this line if you want to create a new network and it doesn't work
