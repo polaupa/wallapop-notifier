@@ -48,7 +48,7 @@ def main():
 
     if not TELEGRAM_CHAT_ID:
         TELEGRAM_CHAT_ID = get_chat_id()
-        set_key(ENV_PATH, "TELEGRAM_CHAT_ID", TELEGRAM_CHAT_ID)
+        set_key(ENV_PATH, "TELEGRAM_CHAT_ID", str(TELEGRAM_CHAT_ID))
         logger.info("Telegram Chat ID saved in .env file.")
     else:
         logger.debug(f"Using Telegram Chat ID: {TELEGRAM_CHAT_ID}")    

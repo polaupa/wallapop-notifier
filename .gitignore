@@ -4,6 +4,7 @@ usermap.py
 
 __pycache__
 /venv
+/.venv
 
 /tests-pol
 mockdata.py
