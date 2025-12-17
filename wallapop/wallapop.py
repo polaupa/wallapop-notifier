@@ -3,7 +3,7 @@ from datetime import datetime
 from urllib.parse import urlencode
 import logging
 import json
-from time import sleep
+from functools import lru_cache
 from wallapop.db import insert_items
 
 logger = logging.getLogger("wallapop")
@@ -81,14 +81,13 @@ def search_wallapop(params, REFRESH_TIME=120, MOCK=False):
         date = datetime.fromtimestamp(timestamp / 1000)
         difference = current_date - date
         user_reviews = getUserReviews(user_id)
-        images = []
-        for image in item["images"]:
-            images.append(image["urls"]['small'])
+        images = [img["urls"].get('small') for img in item.get("images", [])]
 
         # If item is newer than REFRESH_TIME seconds, append it
         if MOCK:
+            # Preserve existing behavior: include images only in MOCK mode
             new_items.append({'title': title, 'description': description, 'price': price, 'date': date, 'item_url': item_url, 'location': location, 'user_id': user_id, 'images': images, 'user_reviews': user_reviews})
-        elif difference.seconds < REFRESH_TIME + 120:
+        elif difference.seconds < REFRESH_TIME + 1000:
             new_items.append({'title':title, 'description':description, 'price':price, 'date':date, 'item_url':item_url, 'location':location, 'user_id': user_id, 'user_reviews': user_reviews})
     if new_items:
         logger.info(f"Found {len(new_items)} new items for {params['ITEM']} :)")
@@ -96,6 +95,7 @@ def search_wallapop(params, REFRESH_TIME=120, MOCK=False):
 
     return new_items
 
+@lru_cache(maxsize=2048)
 def getUserReviews(user_id):
     #reviews
     url = f"https://api.wallapop.com/api/v3/users/{user_id}/stats?init=0"

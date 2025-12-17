@@ -1,6 +1,6 @@
 services:
-  wallapop:
-    container_name: wallapop-notifier
+  wallapop-confluent:
+    container_name: wallapop-notifier-confluent
     build:
       # context: https://github.com/polaupa/wallapop-notifier.git
       context: .
@@ -8,44 +8,48 @@ services:
     env_file:
       - .env
     environment:
-      - DATABASE_HOST=db
+      - DATABASE_HOST=db-confluent
     volumes:
       - .:/app
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
     networks:
-      - db
+      - db-confluent
     restart: unless-stopped
-  db:
+  db-confluent:
     image: mariadb:latest
-    container_name: wallapop-db
+    container_name: wallapop-db-confluent
     environment:
       MYSQL_ROOT_PASSWORD: password
       MYSQL_DATABASE: wallapop
       MYSQL_USER: user
       MYSQL_PASSWORD: password
     volumes:
-      - db_data:/var/lib/mysql
+      - db_data-confluent:/var/lib/mysql
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
     # ports: # Only enable if we need to access this data outside the docker network
     #   - "3306:3306" # Only enable if we need to access this data outside the docker network
     networks:
-      - db
+      - db-confluent
       - dbgate_network
     restart: unless-stopped
-  chatbot-telegram:
-    container_name: chatbot-telegram
-    build:
-      context: ./telegram_chatbot
-      dockerfile: Dockerfile
-    env_file:
-      - .env    
-    volumes:
-      - ./telegram_chatbot:/app
-    restart: always
+  # chatbot-telegram-confluent:
+  #   container_name: chatbot-telegram-confluent
+  #   build:
+  #     context: ./telegram_chatbot
+  #     dockerfile: Dockerfile
+  #   env_file:
+  #     - .env    
+  #   volumes:
+  #     - ./telegram_chatbot:/app
+  #     - /etc/timezone:/etc/timezone:ro
+  #     - /etc/localtime:/etc/localtime:ro
+  #   restart: always
 volumes:
-  db_data:
-    name: wallapop-db-data
+  db_data-confluent:
+    name: wallapop-db-data-confluent
 networks:
-  db:
+  db-confluent:
   dbgate_network:
     external: true # Use existing dbgate_network created for jobseek -> Remove this line if you want to create a new network and it doesn't work

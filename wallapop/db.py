@@ -19,17 +19,9 @@ DATABASE_URL = f"mariadb+mariadbconnector://{DB_USER}:{DB_PASS}@{DB_HOST}:3306/{
 Base = declarative_base()
 
 
-# class BaseProduct(Base):
-#     __tablename__ = DB_NAME
-
-#     title = Column(String(255))
-#     price = Column(Float)
-#     item_url = Column(String(255), primary_key=True)
-#     description = Column(String(1024)) 
-#     location = Column(String(255)) 
-#     date = Column(DateTime)
-#     user_id = Column(String(32))
-#     user_reviews = Column(Integer)
+# Engine and Session are created once and reused to improve performance
+engine = create_engine(DATABASE_URL, pool_pre_ping=True)
+Session = sessionmaker(bind=engine)
 
 def create_product_class(tablename):
     if hasattr(Base, 'registry') and tablename in Base.registry._class_registry:
@@ -52,8 +44,6 @@ def create_product_class(tablename):
     return ProductClass
 
 def insert_items(tablename, items):
-
-    engine = create_engine(DATABASE_URL)
     tablename = tablename.lower()
     tablename = tablename.replace(" ", "_")
     ProductClass = create_product_class(tablename)
@@ -68,7 +58,7 @@ def insert_items(tablename, items):
         logger.error(f"Database connection error: {e}")
         sleep(5)
         return
-    Session = sessionmaker(bind=engine)
+
     session = Session()
 
     new_items = []
@@ -104,13 +94,27 @@ def insert_items(tablename, items):
             logger.debug(f"Inserted new Item: {item['title']}")
         else:
             if new_item_in_db.price != item['price']:
+                old_price = new_item_in_db.price
                 new_item_in_db.price = item['price']
-                logger.info(f"Item with title '{item['title']}' has changed its price from {new_item_in_db.price} to {item['price']}.")
+                # Commit the price update immediately to preserve current behavior
+                try:
+                    session.commit()
+                except SQLAlchemyError as e:
+                    logger.error(f"Error updating Item: {e}")
+                    session.rollback()
+                    return
+                except OperationalError as e:
+                    logger.error(f"Database connection error: {e}")
+                    session.rollback()
+                    return
+                logger.info(f"Item with title '{item['title']}' has changed its price from {old_price} to {item['price']}.")
 
             else:
                 logger.debug(f"Item '{item['title']}' already exists. Skipping insertion.")
     
-    session.commit()
-    session.close()
+    try:
+        session.commit()
+    finally:
+        session.close()
 
     return new_items

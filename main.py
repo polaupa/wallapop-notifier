@@ -2,17 +2,18 @@ import time
 import os
 import logging
 import sys
-import colorlog
 import random
-from datetime import datetime
-from dotenv import load_dotenv,set_key
+import colorlog
+from dotenv import load_dotenv, set_key
 from googleapiclient.errors import HttpError
 
+from kafka.producer import produce_item
 
-from wallapop.wallapop import search_wallapop, getUserReviews
+from wallapop.wallapop import search_wallapop
 import google_utils.gsheets as gsheets
-from telegram_utils.telegram_utils import send_telegram, get_chat_id, html_parse
-from wallapop.ai_analysis import analyze_products
+from telegram_utils.telegram_utils import get_chat_id
+# from telegram_utils.telegram_utils import send_telegram, html_parse
+# from wallapop.ai_analysis import analyze_products
 
 
 REFRESH_TIME = 30
@@ -38,63 +39,71 @@ logger = logging.getLogger("wallapop")
 logger.setLevel(logging.DEBUG)
 
 
+def _load_or_request_chat_id(env_path: str) -> str:
+    chat_id = os.getenv("TELEGRAM_CHAT_ID")
+    if not chat_id:
+        chat_id = get_chat_id()
+        set_key(env_path, "TELEGRAM_CHAT_ID", str(chat_id))
+        logger.info("Telegram Chat ID saved in .env file.")
+    else:
+        logger.debug(f"Using Telegram Chat ID: {chat_id}")
+    return chat_id
+
+
+def _get_spreadsheet_reader():
+    spreadsheet_id = os.getenv("SPREADSHEET_ID")
+    spreadsheet_public_url_csv = os.getenv("SPREADSHEET_PUBLIC_URL_CSV")
+
+    if not spreadsheet_id:
+        logger.info("Public Google Sheets URL provided, no authentication needed.")
+        return (None, lambda: gsheets.readSpreadsheetWithoutAuth(spreadsheet_public_url_csv))
+
+    gcreds = gsheets.googleLogin()
+    logger.info("Google Sheets credentials loaded successfully.")
+    return (gcreds, lambda: gsheets.readSpreadsheetWithAuth(gcreds, spreadsheet_id))
+
 
 def main():
     time.sleep(3)
     load_dotenv(ENV_PATH)
-    TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
-    SPREADSHEET_ID = os.getenv("SPREADSHEET_ID")
-    SPREADSHEET_PUBLIC_URL_CSV = os.getenv("SPREADSHEET_PUBLIC_URL_CSV")
+    TELEGRAM_CHAT_ID = _load_or_request_chat_id(ENV_PATH)
 
-    if not TELEGRAM_CHAT_ID:
-        TELEGRAM_CHAT_ID = get_chat_id()
-        set_key(ENV_PATH, "TELEGRAM_CHAT_ID", str(TELEGRAM_CHAT_ID))
-        logger.info("Telegram Chat ID saved in .env file.")
-    else:
-        logger.debug(f"Using Telegram Chat ID: {TELEGRAM_CHAT_ID}")    
-    
-    if not SPREADSHEET_ID:
-        GCREDS = None
-        logger.info("Public Google Sheets URL provided, no authentication needed.")
-    else:
-        GCREDS = gsheets.googleLogin()
-        logger.info("Google Sheets credentials loaded successfully.")
+    GCREDS, read_spreadsheet = _get_spreadsheet_reader()
 
 
     try:
         while True:
             try:
-                if MOCK:
-                    spreadsheet = mock_spreadsheet
-                elif GCREDS:
-                    spreadsheet = gsheets.readSpreadsheetWithAuth(GCREDS, SPREADSHEET_ID)
-                else:
-                    spreadsheet = gsheets.readSpreadsheetWithoutAuth(SPREADSHEET_PUBLIC_URL_CSV)
+                spreadsheet = mock_spreadsheet if MOCK else read_spreadsheet()
             except HttpError as e:
                 logger.warning(f"Token Expired: {e}")
-                GCREDS = gsheets.googleLogin()
+                # Re-login and retry once
+                GCREDS, read_spreadsheet = _get_spreadsheet_reader()
+                spreadsheet = mock_spreadsheet if MOCK else read_spreadsheet()
 
             for params in spreadsheet:
-                if params["MIN_REVIEWS"] == "" or params["MIN_REVIEWS"] == "-":
+                if params.get("MIN_REVIEWS") in ("", "-", None):
                     params["MIN_REVIEWS"] = 0
                 new_items = search_wallapop(params, REFRESH_TIME, MOCK)
                 time.sleep(random.uniform(1, 3))
-                if new_items:
-                    products = analyze_products(new_items, params)
-                    for product in products:
-                        if product.score == None and product.user_reviews > 0:
-                            html_product = html_parse(product)
-                            send_telegram(html_product, TELEGRAM_CHAT_ID)
-                        elif int(product.user_reviews) <= int(params["MIN_REVIEWS"]):
-                            logger.info(f"Item: {product.title} has {product.user_reviews} reviews. Skipping.")
-                        elif int(product.score) > int(MIN_SCORE) and int(product.user_reviews) >= int(params["MIN_REVIEWS"]):
-                            html_product = html_parse(product)
-                            send_telegram(html_product, TELEGRAM_CHAT_ID)
-                            logger.info(f"Item: {product.title} is interesting (score: {product.score}, price {product.price}). Telegram message sent.")
-                            logger.debug(product.analysis)
-                        else:
-                            logger.info(f"Item: {product.title} is not interesting enough (score: {product.score}, price {product.price}). Skipping.")
-                            logger.debug(product.analysis)
+                for item in new_items:
+                    produce_item("wallapop.items.raw", item)
+                # if new_items:
+                #     products = analyze_products(new_items, params)
+                #     for product in products:
+                #         if product.score == None and product.user_reviews > 0:
+                #             html_product = html_parse(product)
+                #             send_telegram(html_product, TELEGRAM_CHAT_ID)
+                #         elif int(product.user_reviews) <= int(params["MIN_REVIEWS"]):
+                #             logger.info(f"Item: {product.title} has {product.user_reviews} reviews. Skipping.")
+                #         elif int(product.score) > int(MIN_SCORE) and int(product.user_reviews) >= int(params["MIN_REVIEWS"]):
+                #             html_product = html_parse(product)
+                #             send_telegram(html_product, TELEGRAM_CHAT_ID)
+                #             logger.info(f"Item: {product.title} is interesting (score: {product.score}, price {product.price}). Telegram message sent.")
+                #             logger.debug(product.analysis)
+                #         else:
+                #             logger.info(f"Item: {product.title} is not interesting enough (score: {product.score}, price {product.price}). Skipping.")
+                #             logger.debug(product.analysis)
                 # else:
                 #     logger.debug(f"No new items found for {params['ITEM']}.")
             # logger.debug(f"Sleeping {round(REFRESH_TIME/60,2)} minutes until next check.")

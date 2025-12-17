@@ -82,13 +82,12 @@ def readSpreadsheetWithAuth(creds, SPREADSHEET_ID):
 def readSpreadsheetWithoutAuth(SPREADSHEET_PUBLIC_URL):
     try:
         df = pd.read_csv(SPREADSHEET_PUBLIC_URL)
-    except HTTPError or URLError as e:
+    except (HTTPError, URLError) as e:
         logger.error("Error accessing the public spreadsheet: %s", e)
         return []
     if df.empty:
         logger.error("No data found. Empty SpreadSheet")
         return []
-    a = parseSpreadsheet(df)
     return parseSpreadsheet(df)
 
 
